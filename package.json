@@ -82,6 +82,6 @@
     "node": ">=8.0.0"
   },
   "main": "./dist/fabric.js",
-  "types": "./types",
+  "types": "./types/fabric.d.ts",
   "dependencies": {}
 }
