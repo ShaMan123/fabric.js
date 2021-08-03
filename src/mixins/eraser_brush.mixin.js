@@ -360,7 +360,7 @@
   var __onResize = fabric.Canvas.prototype._onResize;
   /**
    * @fires erasing:start
-   * @fires erasing:end use object's `erasing:end` event if you need to monitor nested objects
+   * @fires erasing:end
    */
   fabric.util.object.extend(fabric.Canvas.prototype, {
     /**
@@ -835,6 +835,7 @@
         if (!obj.getEraser()) {
           var size = obj._getNonTransformedDimensions();
           var rect = new fabric.Rect({
+            fill: 'rgb(0,0,0)',
             width: size.x,
             height: size.y,
             clipPath: obj.clipPath,
