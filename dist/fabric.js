@@ -3440,6 +3440,10 @@ fabric.warn = console.warn;
    * @param {Function} [options.abort] Additional function with logic. If returns true, onComplete is called.
    */
   function animate(options) {
+    var aborted = false;
+    var abort = function () {
+      aborted = true;
+    }
 
     requestAnimFrame(function(timestamp) {
       options || (options = { });
@@ -3465,7 +3469,7 @@ fabric.warn = console.warn;
             timePerc = currentTime / duration,
             current = easing(currentTime, startValue, byValue, duration),
             valuePerc = Math.abs((current - startValue) / byValue);
-        if (abort()) {
+        if (aborted || abort()) {
           onComplete(endValue, 1, 1);
           return;
         }
@@ -3480,6 +3484,8 @@ fabric.warn = console.warn;
         }
       })(start);
     });
+
+    return abort;
   }
 
   var _requestAnimFrame = fabric.window.requestAnimationFrame       ||
@@ -3548,7 +3554,7 @@ fabric.warn = console.warn;
         originalOnChange = options.onChange;
     options = options || {};
 
-    fabric.util.animate(fabric.util.object.extend(options, {
+    return fabric.util.animate(fabric.util.object.extend(options, {
       duration: duration || 500,
       startValue: startColor,
       endValue: endColor,
@@ -9262,7 +9268,7 @@ fabric.ElementsParser = function(elements, callback, options, reviver, parsingOp
      * @chainable
      */
     clear: function () {
-      this._objects.length = 0;
+      this.remove.apply(this, this.getObjects());
       this.backgroundImage = null;
       this.overlayImage = null;
       this.backgroundColor = '';
