@@ -1,4 +1,4 @@
-(function() {
+(function () {
 
   /**
    * @private
@@ -29,7 +29,7 @@
    */
   function on(eventName, handler) {
     if (!this.__eventListeners) {
-      this.__eventListeners = { };
+      this.__eventListeners = {};
     }
     // one object with key/value pairs was passed
     if (arguments.length === 1) {
@@ -48,7 +48,7 @@
 
   function _once(eventName, handler) {
     var _handler = function () {
-      handler();
+      handler.apply(this, arguments);
       this.off(eventName, _handler);
     }.bind(this);
     this.on(eventName, _handler);
@@ -119,9 +119,9 @@
     }
 
     for (var i = 0, len = listenersForEvent.length; i < len; i++) {
-      listenersForEvent[i] && listenersForEvent[i].call(this, options || { });
+      listenersForEvent[i] && listenersForEvent[i].call(this, options || {});
     }
-    this.__eventListeners[eventName] = listenersForEvent.filter(function(value) {
+    this.__eventListeners[eventName] = listenersForEvent.filter(function (value) {
       return value !== false;
     });
     return this;
