@@ -1,10 +1,10 @@
-(function(global) {
+(function (global) {
 
   'use strict';
 
-  var fabric = global.fabric || (global.fabric = { }),
-      min = fabric.util.array.min,
-      max = fabric.util.array.max;
+  var fabric = global.fabric || (global.fabric = {}),
+    min = fabric.util.array.min,
+    max = fabric.util.array.max;
 
   if (fabric.Group) {
     return;
@@ -64,7 +64,7 @@
      * @param {Boolean} [isAlreadyGrouped] if true, objects have been grouped already.
      * @return {Object} thisArg
      */
-    initialize: function(objects, options, isAlreadyGrouped) {
+    initialize: function (objects, options, isAlreadyGrouped) {
       options = options || {};
       this._objects = [];
       // if objects enclosed in a group have been grouped already,
@@ -72,7 +72,7 @@
       // Thus we need to set options to group without objects,
       isAlreadyGrouped && this.callSuper('initialize', options);
       this._objects = objects || [];
-      for (var i = this._objects.length; i--; ) {
+      for (var i = this._objects.length; i--;) {
         this._objects[i].group = this;
       }
 
@@ -105,9 +105,9 @@
     /**
      * @private
      */
-    _updateObjectsACoords: function() {
+    _updateObjectsACoords: function () {
       var skipControls = true;
-      for (var i = this._objects.length; i--; ){
+      for (var i = this._objects.length; i--;) {
         this._objects[i].setCoords(skipControls);
       }
     },
@@ -116,9 +116,9 @@
      * @private
      * @param {Boolean} [skipCoordsChange] if true, coordinates of objects enclosed in a group do not change
      */
-    _updateObjectsCoords: function(center) {
+    _updateObjectsCoords: function (center) {
       var center = center || this.getCenterPoint();
-      for (var i = this._objects.length; i--; ){
+      for (var i = this._objects.length; i--;) {
         this._updateObjectCoords(this._objects[i], center);
       }
     },
@@ -128,10 +128,10 @@
      * @param {Object} object
      * @param {fabric.Point} center, current center of group.
      */
-    _updateObjectCoords: function(object, center) {
+    _updateObjectCoords: function (object, center) {
       var objectLeft = object.left,
-          objectTop = object.top,
-          skipControls = true;
+        objectTop = object.top,
+        skipControls = true;
 
       object.set({
         left: objectLeft - center.x,
@@ -145,7 +145,7 @@
      * Returns string represenation of a group
      * @return {String}
      */
-    toString: function() {
+    toString: function () {
       return '#<fabric.Group: (' + this.complexity() + ')>';
     },
 
@@ -155,7 +155,7 @@
      * @return {fabric.Group} thisArg
      * @chainable
      */
-    addWithUpdate: function(object) {
+    addWithUpdate: function (object) {
       var nested = !!this.group;
       this._restoreObjectsState();
       fabric.util.resetObjectTransform(this);
@@ -176,8 +176,8 @@
       }
       else {
         this.setCoords();
+        object && this._fireGroupEvent('added', object);
       }
-      object && this._fireGroupEvent('added', object);
       return this;
     },
 
@@ -187,7 +187,7 @@
      * @return {fabric.Group} thisArg
      * @chainable
      */
-    removeWithUpdate: function(object) {
+    removeWithUpdate: function (object) {
       this._restoreObjectsState();
       fabric.util.resetObjectTransform(this);
       this.supressRemovedEvent = true;
@@ -204,7 +204,7 @@
     /**
      * @private
      */
-    _onObjectAdded: function(object) {
+    _onObjectAdded: function (object) {
       this.dirty = true;
       object.group = this;
       object._set('canvas', this.canvas);
@@ -233,7 +233,7 @@
     /**
      * @private
      */
-    _set: function(key, value) {
+    _set: function (key, value) {
       var i = this._objects.length;
       if (this.useSetOnGroup) {
         while (i--) {
@@ -253,7 +253,7 @@
      * @param {Array} [propertiesToInclude] Any properties that you might want to additionally include in the output
      * @return {Object} object representation of an instance
      */
-    toObject: function(propertiesToInclude) {
+    toObject: function (propertiesToInclude) {
       var _includeDefaultValues = this.includeDefaultValues;
       var objsToObject = this._objects
         .filter(function (obj) {
@@ -276,14 +276,14 @@
      * @param {Array} [propertiesToInclude] Any properties that you might want to additionally include in the output
      * @return {Object} object representation of an instance
      */
-    toDatalessObject: function(propertiesToInclude) {
+    toDatalessObject: function (propertiesToInclude) {
       var objsToObject, sourcePath = this.sourcePath;
       if (sourcePath) {
         objsToObject = sourcePath;
       }
       else {
         var _includeDefaultValues = this.includeDefaultValues;
-        objsToObject = this._objects.map(function(obj) {
+        objsToObject = this._objects.map(function (obj) {
           var originalDefaults = obj.includeDefaultValues;
           obj.includeDefaultValues = _includeDefaultValues;
           var _obj = obj.toDatalessObject(propertiesToInclude);
@@ -300,7 +300,7 @@
      * Renders instance on a given context
      * @param {CanvasRenderingContext2D} ctx context to render instance on
      */
-    render: function(ctx) {
+    render: function (ctx) {
       this._transformDone = true;
       this.callSuper('render', ctx);
       this._transformDone = false;
@@ -313,7 +313,7 @@
      * Generally you do not cache objects in groups because the group is already cached.
      * @return {Boolean}
      */
-    shouldCache: function() {
+    shouldCache: function () {
       var ownCache = fabric.Object.prototype.shouldCache.call(this);
       if (ownCache) {
         for (var i = 0, len = this._objects.length; i < len; i++) {
@@ -330,7 +330,7 @@
      * Check if this object or a child object will cast a shadow
      * @return {Boolean}
      */
-    willDrawShadow: function() {
+    willDrawShadow: function () {
       if (fabric.Object.prototype.willDrawShadow.call(this)) {
         return true;
       }
@@ -346,7 +346,7 @@
      * Check if this group or its parent group are caching, recursively up
      * @return {Boolean}
      */
-    isOnACache: function() {
+    isOnACache: function () {
       return this.ownCaching || (this.group && this.group.isOnACache());
     },
 
@@ -354,7 +354,7 @@
      * Execute the drawing operation for an object on a specified context
      * @param {CanvasRenderingContext2D} ctx Context to render on
      */
-    drawObject: function(ctx) {
+    drawObject: function (ctx) {
       for (var i = 0, len = this._objects.length; i < len; i++) {
         this._objects[i].render(ctx);
       }
@@ -364,7 +364,7 @@
     /**
      * Check if cache is dirty
      */
-    isCacheDirty: function(skipCanvas) {
+    isCacheDirty: function (skipCanvas) {
       if (this.callSuper('isCacheDirty', skipCanvas)) {
         return true;
       }
@@ -393,9 +393,9 @@
      * @return {fabric.Group} thisArg
      * @chainable
      */
-    _restoreObjectsState: function() {
+    _restoreObjectsState: function () {
       var groupMatrix = this.calcOwnMatrix();
-      this._objects.forEach(function(object) {
+      this._objects.forEach(function (object) {
         // instead of using _this = this;
         fabric.util.addTransformToObject(object, groupMatrix);
         delete object.group;
@@ -418,7 +418,7 @@
      * @param {Array} parentMatrix parent transformation
      * @return {fabric.Object} transformedObject
      */
-    realizeTransform: function(object, parentMatrix) {
+    realizeTransform: function (object, parentMatrix) {
       fabric.util.addTransformToObject(object, parentMatrix);
       return object;
     },
@@ -428,10 +428,10 @@
      * @return {fabric.Group} thisArg
      * @chainable
      */
-    destroy: function() {
+    destroy: function () {
       // when group is destroyed objects needs to get a repaint to be eventually
       // displayed on canvas.
-      this._objects.forEach(function(object) {
+      this._objects.forEach(function (object) {
         object.set('dirty', true);
       });
       return this._restoreObjectsState();
@@ -443,7 +443,7 @@
      * @return {fabric.ActiveSelection} thisArg
      * @chainable
      */
-    toActiveSelection: function() {
+    toActiveSelection: function () {
       if (!this.canvas) {
         return;
       }
@@ -455,7 +455,7 @@
       activeSelection.set(options);
       activeSelection.type = 'activeSelection';
       canvas.remove(this);
-      objects.forEach(function(object) {
+      objects.forEach(function (object) {
         object.group = activeSelection;
         object.dirty = true;
         canvas.add(object);
@@ -472,7 +472,7 @@
      * @return {fabric.Group} thisArg
      * @chainable
      */
-    ungroupOnCanvas: function() {
+    ungroupOnCanvas: function () {
       return this._restoreObjectsState();
     },
 
@@ -481,9 +481,9 @@
      * @return {fabric.Group} thisArg
      * @chainable
      */
-    setObjectsCoords: function() {
+    setObjectsCoords: function () {
       var skipControls = true;
-      this.forEachObject(function(object) {
+      this.forEachObject(function (object) {
         object.setCoords(skipControls);
       });
       return this;
@@ -492,15 +492,15 @@
     /**
      * @private
      */
-    _calcBounds: function(onlyWidthHeight) {
+    _calcBounds: function (onlyWidthHeight) {
       var aX = [],
-          aY = [],
-          o, prop, coords,
-          props = ['tr', 'br', 'bl', 'tl'],
-          i = 0, iLen = this._objects.length,
-          j, jLen = props.length;
+        aY = [],
+        o, prop, coords,
+        props = ['tr', 'br', 'bl', 'tl'],
+        i = 0, iLen = this._objects.length,
+        j, jLen = props.length;
 
-      for ( ; i < iLen; ++i) {
+      for (; i < iLen; ++i) {
         o = this._objects[i];
         coords = o.calcACoords();
         for (j = 0; j < jLen; j++) {
@@ -517,12 +517,12 @@
     /**
      * @private
      */
-    _getBounds: function(aX, aY, onlyWidthHeight) {
+    _getBounds: function (aX, aY, onlyWidthHeight) {
       var minXY = new fabric.Point(min(aX), min(aY)),
-          maxXY = new fabric.Point(max(aX), max(aY)),
-          top = minXY.y || 0, left = minXY.x || 0,
-          width = (maxXY.x - minXY.x) || 0,
-          height = (maxXY.y - minXY.y) || 0;
+        maxXY = new fabric.Point(max(aX), max(aY)),
+        top = minXY.y || 0, left = minXY.x || 0,
+        width = (maxXY.x - minXY.x) || 0,
+        height = (maxXY.y - minXY.y) || 0;
       this.width = width;
       this.height = height;
       if (!onlyWidthHeight) {
@@ -538,7 +538,7 @@
      * @param {Function} [reviver] Method for further parsing of svg representation.
      * @return {String} svg representation of an instance
      */
-    _toSVG: function(reviver) {
+    _toSVG: function (reviver) {
       var svgString = ['<g ', 'COMMON_PARTS', ' >\n'];
 
       for (var i = 0, len = this._objects.length; i < len; i++) {
@@ -552,10 +552,10 @@
      * Returns styles-string for svg-export, specific version for group
      * @return {String}
      */
-    getSvgStyles: function() {
+    getSvgStyles: function () {
       var opacity = typeof this.opacity !== 'undefined' && this.opacity !== 1 ?
-            'opacity: ' + this.opacity + ';' : '',
-          visibility = this.visible ? '' : ' visibility: hidden;';
+        'opacity: ' + this.opacity + ';' : '',
+        visibility = this.visible ? '' : ' visibility: hidden;';
       return [
         opacity,
         this.getSvgFilter(),
@@ -568,7 +568,7 @@
      * @param {Function} [reviver] Method for further parsing of svg representation.
      * @return {String} svg representation of an instance
      */
-    toClipPathSVG: function(reviver) {
+    toClipPathSVG: function (reviver) {
       var svgString = [];
 
       for (var i = 0, len = this._objects.length; i < len; i++) {
@@ -587,9 +587,9 @@
    * @param {Object} object Object to create a group from
    * @param {Function} [callback] Callback to invoke when an group instance is created
    */
-  fabric.Group.fromObject = function(object, callback) {
+  fabric.Group.fromObject = function (object, callback) {
     var objects = object.objects,
-        options = fabric.util.object.clone(object, true);
+      options = fabric.util.object.clone(object, true);
     delete options.objects;
     if (typeof objects === 'string') {
       // it has to be an url or something went wrong.
@@ -600,8 +600,8 @@
       });
       return;
     }
-    fabric.util.enlivenObjects(objects, function(enlivenedObjects) {
-      fabric.util.enlivenObjects([object.clipPath], function(enlivedClipPath) {
+    fabric.util.enlivenObjects(objects, function (enlivenedObjects) {
+      fabric.util.enlivenObjects([object.clipPath], function (enlivedClipPath) {
         var options = fabric.util.object.clone(object, true);
         options.clipPath = enlivedClipPath[0];
         delete options.objects;
