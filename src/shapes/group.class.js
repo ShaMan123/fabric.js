@@ -208,7 +208,7 @@
       this.dirty = true;
       object.group = this;
       object._set('canvas', this.canvas);
-      !this.supressAddedEvent && this._fireGroupEvent('added', object);
+      //!this.supressAddedEvent && this._fireGroupEvent('added', object);
     },
 
     /**
