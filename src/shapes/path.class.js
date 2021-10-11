@@ -63,12 +63,9 @@
     _setPath: function (path, options) {
       var fromArray = _toString.call(path) === '[object Array]';
 
-      this.path = fromArray
-        ? fabric.util.makePathSimpler(path)
-
-        : fabric.util.makePathSimpler(
-          fabric.util.parsePath(path)
-        );
+      this.path = fabric.util.makePathSimpler(
+        fromArray ? path : fabric.util.parsePath(path)
+      );
 
       fabric.Polyline.prototype._setPositionDimensions.call(this, options || {});
     },
@@ -209,9 +206,7 @@
      * of the instance
      */
     _toSVG: function() {
-      var path = this.path.map(function(path) {
-        return path.join(' ');
-      }).join(' ');
+      var path = fabric.util.joinPath(this.path);
       return [
         '<path ', 'COMMON_PARTS',
         'd="', path,
