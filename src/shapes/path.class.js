@@ -67,7 +67,31 @@
         fromArray ? path : fabric.util.parsePath(path)
       );
 
+      this._setPositionDimensions(options);
+    },
+
+    /**
+     * 
+     * @param {Object} [options] Options object (needed in initialization)
+     */
+    _setPositionDimensions: function (options) {
       fabric.Polyline.prototype._setPositionDimensions.call(this, options || {});
+    },
+
+    /**
+     * Sets corner and controls position coordinates based on current angle, width and height, left and top.
+     * oCoords are used to find the corners
+     * aCoords are used to quickly find an object on the canvas
+     * lineCoords are used to quickly find object during pointer events.
+     * See {@link https://github.com/fabricjs/fabric.js/wiki/When-to-call-setCoords}
+     * @override in case path dimensions have changed calculate dimensions 
+     * @param {Boolean} [skipCorners] skip calculation of oCoords.
+     * @return {fabric.Object} thisArg
+     * @chainable
+     */
+    setCoords: function (skipCorners) {
+      this._setPositionDimensions();
+      this.callSuper('setCoords', skipCorners);
     },
 
     /**
