@@ -9021,7 +9021,7 @@ fabric.ElementsParser = function(elements, callback, options, reviver, parsingOp
    */
   function findCornerQuadrant(fabricObject, control) {
     //  angle is relative to canvas plane
-    var angle = fabricObject.group ? fabric.util.qrDecompose(fabricObject.calcTransformMatrix()).angle : fabricObject.angle;
+    var angle = fabricObject.getTotalAngle();
     var cornerAngle = angle + radiansToDegrees(Math.atan2(control.y, control.x)) + 360;
     return Math.round((cornerAngle % 360) / 45);
   }
@@ -9823,7 +9823,7 @@ fabric.ElementsParser = function(elements, callback, options, reviver, parsingOp
     ctx.lineWidth = 1;
     ctx.translate(left, top);
     //  angle is relative to canvas plane
-    var angle = fabricObject.group ? fabric.util.qrDecompose(fabricObject.calcTransformMatrix()).angle : fabricObject.angle;
+    var angle = fabricObject.getTotalAngle();
     ctx.rotate(degreesToRadians(angle));
     // this does not work, and fixed with ( && ) does not make sense.
     // to have real transparent corners we need the controls on upperCanvas
@@ -17888,6 +17888,18 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
     },
 
     /**
+     * Returns the object angle relative to canvas counting also the group property
+     * @returns {number}
+     */
+    getTotalAngle: function () {
+      var angle = this.angle;
+      if (this.group) {
+        angle += this.group.getTotalAngle();
+      }
+      return angle;
+    },
+
+    /**
      * @private
      * @param {String} key
      * @param {*} value
@@ -18838,11 +18850,10 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
     getLocalPointer: function (e, pointer) {
       pointer = pointer || this.canvas.getPointer(e);
       var pClicked = new fabric.Point(pointer.x, pointer.y),
-        objectLeftTop = this._getLeftTopCoords(),
-        angle = this.angle;
+          objectLeftTop = this._getLeftTopCoords(),
+          angle = this.getTotalAngle();
       if (this.group) {
         objectLeftTop = fabric.util.transformPoint(objectLeftTop, this.group.calcTransformMatrix());
-        angle = fabric.util.qrDecompose(this.calcTransformMatrix()).angle;
       }
       if (this.angle) {
         pClicked = fabric.util.rotatePoint(
@@ -19740,7 +19751,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
      * aCoords are used to quickly find an object on the canvas
      * lineCoords are used to quickly find object during pointer events.
      * See {@link https://github.com/fabricjs/fabric.js/wiki/When-to-call-setCoords} and {@link http://fabricjs.com/fabric-gotchas}
-     * 
+     *
      * @param {Boolean} [skipCorners] skip calculation of oCoords.
      * @return {fabric.Object} thisArg
      * @chainable
@@ -20556,7 +20567,7 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
         height
       );
       hasControls && this.drawControlsConnectingLines(ctx);
-  
+
       ctx.restore();
       return this;
     },
@@ -20608,11 +20619,11 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
      */
     drawControlsConnectingLines: function (ctx) {
       var wh = this._calculateCurrentDimensions(),
-        strokeWidth = this.borderScaleFactor,
-        width = wh.x + strokeWidth,
-        height = wh.y + strokeWidth,
-        shouldStroke = false;
-      
+          strokeWidth = this.borderScaleFactor,
+          width = wh.x + strokeWidth,
+          height = wh.y + strokeWidth,
+          shouldStroke = false;
+
       ctx.beginPath();
       this.forEachControl(function (control, key, fabricObject) {
         // in this moment, the ctx is centered on the object.
@@ -20628,7 +20639,7 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
         }
       });
       shouldStroke && ctx.stroke();
-      
+
       return this;
     },
 
@@ -24229,6 +24240,11 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
      * @default
      */
     type: 'activeSelection',
+
+    /**
+     * disabled for proper functionality
+     */
+    subTargetCheck: false,
 
     /**
      * Constructor
