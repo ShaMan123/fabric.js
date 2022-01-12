@@ -972,9 +972,9 @@
      * @return {Number}
      */
     getObjectOpacity: function() {
-      var opacity = this.opacity;
-      if (this.group) {
-        opacity *= this.group.getObjectOpacity();
+      var opacity = this.opacity, parent = this.group || this.parent;
+      if (parent) {
+        opacity *= parent.getObjectOpacity();
       }
       return opacity;
     },
@@ -987,7 +987,7 @@
      */
     _set: function(key, value) {
       var shouldConstrainValue = (key === 'scaleX' || key === 'scaleY'),
-          isChanged = this[key] !== value, groupNeedsUpdate = false;
+          isChanged = this[key] !== value;
 
       if (shouldConstrainValue) {
         value = this._constrainScale(value);
@@ -1003,20 +1003,20 @@
       else if (key === 'shadow' && value && !(value instanceof fabric.Shadow)) {
         value = new fabric.Shadow(value);
       }
-      else if (key === 'dirty' && this.group) {
-        this.group.set('dirty', value);
+      else if (key === 'dirty') {
+        this.group && this.group.set('dirty', value);
+        this.parent && this.parent.set('dirty', value);
       }
 
       this[key] = value;
 
       if (isChanged) {
-        groupNeedsUpdate = this.group && this.group.isOnACache();
+        var parent = this.group || this.parent;
         if (this.cacheProperties.indexOf(key) > -1) {
           this.dirty = true;
-          groupNeedsUpdate && this.group.set('dirty', true);
         }
-        else if (groupNeedsUpdate && this.stateProperties.indexOf(key) > -1) {
-          this.group.set('dirty', true);
+        if (parent && parent.isOnACache() && (this.dirty || this.stateProperties.indexOf(key) > -1)) {
+          parent.set('dirty', true);
         }
       }
       return this;
@@ -1045,7 +1045,7 @@
       return fabric.iMatrix.concat();
     },
 
-    /*
+    /**
      * @private
      * return if the object would be visible in rendering
      * @memberOf fabric.Object.prototype
@@ -1055,6 +1055,16 @@
       return this.opacity === 0 ||
         (!this.width && !this.height && this.strokeWidth === 0) ||
         !this.visible;
+    },
+
+    /**
+     * used by canvas' active object logic to determine `subTargets`
+     * @private
+     * @memberOf fabric.Object.prototype
+     * @returns {boolean}
+     */
+    isSelectable: function() {
+      return this.selectable && this.evented && !this.isNotVisible() && this.isOnScreen();
     },
 
     /**
@@ -1167,11 +1177,9 @@
      * Read as: cache if is needed, or if the feature is enabled but we are not already caching.
      * @return {Boolean}
      */
-    shouldCache: function() {
-      this.ownCaching = this.needsItsOwnCache() || (
-        this.objectCaching &&
-        (!this.group || !this.group.isOnACache())
-      );
+    shouldCache: function () {
+      var parent = this.group || this.parent;
+      this.ownCaching = this.needsItsOwnCache() || (this.objectCaching && (!parent || !parent.isOnACache()));
       return this.ownCaching;
     },
 
@@ -1308,8 +1316,9 @@
      * @private
      * @param {CanvasRenderingContext2D} ctx Context to render on
      */
-    _setOpacity: function(ctx) {
-      if (this.group && !this.group._transformDone) {
+    _setOpacity: function (ctx) {
+      var parent = this.group || this.parent;
+      if (parent && !parent._transformDone) {
         ctx.globalAlpha = this.getObjectOpacity();
       }
       else {
@@ -1930,6 +1939,41 @@
         x: pClicked.x - objectLeftTop.x,
         y: pClicked.y - objectLeftTop.y
       };
+    },
+
+    /**
+     * Checks if object is decendant of target
+     * Should be used instead of @link {fabric.Collection.contains} for performance reasons
+     * @param {fabric.Object|fabric.StaticCanvas} target 
+     * @returns {boolean}
+     */
+    isDescendantOf: function (target) {
+      var parent = this.group || this.parent || this.canvas;
+      while (parent) {
+        if (target === parent) {
+          return true;
+        }
+        else if (parent instanceof fabric.StaticCanvas) {
+          //  happens after all parents were traversed through without a match
+          return false;
+        }
+        parent = parent.group || parent.parent || parent.canvas;
+      }
+      return false;
+    },
+
+    /**
+     * 
+     * @returns {(fabric.Object | fabric.StaticCanvas)[]} ancestors from bottom to top
+     */
+    getAncestors: function () {
+      var ancestors = [];
+      var parent = this.group || this.parent || this.canvas;
+      while (parent) {
+        ancestors.push(parent);
+        parent = parent.group || parent.parent || parent.canvas;
+      }
+      return ancestors;
     },
 
     /**
