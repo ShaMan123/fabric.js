@@ -136,6 +136,7 @@
         childrenOverride.hasControls = false;
       }
       childrenOverride.forActiveSelection = true;
+      childrenOverride.hasControls = true;
       for (var i = 0, len = this._objects.length; i < len; i++) {
         this._objects[i]._renderControls(ctx, childrenOverride);
       }

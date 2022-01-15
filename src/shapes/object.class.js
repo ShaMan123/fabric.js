@@ -1420,7 +1420,7 @@
       else {
         drawBorders && this.drawBorders(ctx, styleOverride);
       }
-      drawControls && this.drawControls(ctx, styleOverride);
+      drawControls && this.drawControls(ctx, options, styleOverride);
       ctx.restore();
     },
 

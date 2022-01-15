@@ -228,7 +228,7 @@
      * @return {fabric.Object} thisArg
      * @chainable
      */
-    drawControls: function(ctx, styleOverride) {
+    drawControls: function(ctx, transformOptions, styleOverride) {
       styleOverride = styleOverride || {};
       ctx.save();
       var retinaScaling = this.canvas.getRetinaScaling(), matrix, p;
@@ -245,13 +245,64 @@
         // If an application needs to show some objects as selected because of some UI state
         // can still call Object._renderControls() on any object they desire, independently of groups.
         // using no padding, circular controls and hiding the rotating cursor is higly suggested,
+        
+        var bbox = fabric.util.sizeAfterTransform(this.width, this.height, transformOptions),
+          strokeWidth = this.strokeWidth,
+          strokeUniform = this.strokeUniform,
+          borderScaleFactor = this.borderScaleFactor,
+          width =
+            bbox.x + strokeWidth * (strokeUniform ? this.canvas.getZoom() : transformOptions.scaleX) + borderScaleFactor,
+          height =
+            bbox.y + strokeWidth * (strokeUniform ? this.canvas.getZoom() : transformOptions.scaleY) + borderScaleFactor;
+            /*
+        matrix = fabric.util.composeMatrix({
+          scaleX: width / this.width,
+          scaleY: height / this.height,
+          translateX: transformOptions.translateX,
+          translateY: transformOptions.translateY,
+          flipX: transformOptions.flipX,
+          flipY: transformOptions.flipY,
+          angle: transformOptions.angle
+        });
+*/
+
+
         matrix = this.group.calcTransformMatrix();
+        var kkew = fabric.util.composeMatrix({
+          skewX: -transformOptions.skewX,
+          skewY: -transformOptions.skewY,
+        });
+        var translate = fabric.util.composeMatrix({
+          translateX: transformOptions.translateX,
+          translateY: transformOptions.translateY,
+        });
+        var scale = fabric.util.composeMatrix({
+          scaleX: width / this.width,
+          scaleY: height / this.height,
+        });
+        
+
+        matrix = fabric.util.multiplyTransformMatrices(matrix, fabric.util.invertTransform(translate));
+        matrix = fabric.util.multiplyTransformMatrices(matrix, kkew);
+        matrix = fabric.util.multiplyTransformMatrices(matrix, translate);
+
+        matrix = fabric.util.multiplyTransformMatrices(matrix, scale);
+       // matrix[1] = -matrix[1];
+      //  matrix[2] = -matrix[2];
+        //var t = ctx.getTransform(), inv = t.inverse();
+       // ctx.setTransform(t.a, inv.b, inv.c, t.d, inv.e, inv.f);
       }
       this.forEachControl(function(control, key, fabricObject) {
         p = fabricObject.oCoords[key];
         if (control.getVisibility(fabricObject, key)) {
           if (matrix) {
             p = fabric.util.transformPoint(p, matrix);
+            /*
+            p = fabric.util.transformPoint(fabric.util.transformPoint(p, matrix, true), fabric.util.composeMatrix({
+              translateX: transformOptions.translateX,
+              translateY: transformOptions.translateY,
+            }));
+            */
           }
           control.render(ctx, p.x, p.y, styleOverride, fabricObject);
         }
