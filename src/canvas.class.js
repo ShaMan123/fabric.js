@@ -645,7 +645,7 @@
       }
       var pointer = this.getPointer(e);
       if (target.group) {
-        //  transform pointer to target's coordinate plane
+        //  transform pointer to target's containing coordinate plane
         pointer = fabric.util.transformPoint(pointer, fabric.util.invertTransform(target.group.calcTransformMatrix()));
       }
       var corner = target.__corner,
@@ -655,7 +655,10 @@
           action = this._getActionFromCorner(alreadySelected, corner, e, target),
           origin = this._getOriginFromCorner(target, corner),
           altKey = e[this.centeredKey],
-          /**relative to target's coordinate plane */
+          /**
+           * relative to target's containing coordinate plane
+           * both agree on every point
+           **/
           transform = {
             target: target,
             action: action,
