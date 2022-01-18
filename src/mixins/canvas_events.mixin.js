@@ -839,7 +839,7 @@
         this._setCursorFromEvent(e, target);
         this._fireOverOutEvents(target, e);
       }
-      else {
+      else if (this._currentTransform.target.selectable) {
         this._transformObject(e);
       }
       this._handleEvent(e, 'move');
