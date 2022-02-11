@@ -581,6 +581,25 @@
     },
 
     /**
+     * Creates corresponding fabric instances residing in an object, e.g. `clipPath`
+     * @see {@link fabric.Object.ENLIVEN_PROPS}
+     * @param {Object} object
+     * @param {Object} [context] assign enlived props to this object (pass null to skip this)
+     * @param {(objects:fabric.Object[]) => void} callback
+     */
+    enlivenObjectEnlivables: function (object, context, callback) {
+      var enlivenProps = fabric.Object.ENLIVEN_PROPS.filter(function (key) { return !!object[key]; });
+      fabric.util.enlivenObjects(enlivenProps.map(function (key) { return object[key]; }), function (enlivedProps) {
+        var objects = {};
+        enlivenProps.forEach(function (key, index) {
+          objects[key] = enlivedProps[index];
+          context && (context[key] = enlivedProps[index]);
+        });
+        callback && callback(objects);
+      });
+    },
+
+    /**
      * Create and wait for loading of patterns
      * @static
      * @memberOf fabric.util
@@ -685,49 +704,6 @@
           }
         }
       }
-    },
-
-    /**
-     * WARNING: THIS WAS TO SUPPORT OLD BROWSERS. deprecated.
-     * WILL BE REMOVED IN FABRIC 5.0
-     * Draws a dashed line between two points
-     *
-     * This method is used to draw dashed line around selection area.
-     * See <a href="http://stackoverflow.com/questions/4576724/dotted-stroke-in-canvas">dotted stroke in canvas</a>
-     *
-     * @param {CanvasRenderingContext2D} ctx context
-     * @param {Number} x  start x coordinate
-     * @param {Number} y start y coordinate
-     * @param {Number} x2 end x coordinate
-     * @param {Number} y2 end y coordinate
-     * @param {Array} da dash array pattern
-     * @deprecated
-     */
-    drawDashedLine: function(ctx, x, y, x2, y2, da) {
-      var dx = x2 - x,
-          dy = y2 - y,
-          len = sqrt(dx * dx + dy * dy),
-          rot = atan2(dy, dx),
-          dc = da.length,
-          di = 0,
-          draw = true;
-
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.moveTo(0, 0);
-      ctx.rotate(rot);
-
-      x = 0;
-      while (len > x) {
-        x += da[di++ % dc];
-        if (x > len) {
-          x = len;
-        }
-        ctx[draw ? 'lineTo' : 'moveTo'](x, 0);
-        draw = !draw;
-      }
-
-      ctx.restore();
     },
 
     /**
@@ -857,7 +833,7 @@
      * @param  {Boolean} [options.flipX]
      * @param  {Boolean} [options.flipY]
      * @param  {Number} [options.skewX]
-     * @param  {Number} [options.skewX]
+     * @param  {Number} [options.skewY]
      * @return {Number[]} transform matrix
      */
     calcDimensionsMatrix: function(options) {
@@ -1211,6 +1187,49 @@
         x: bbox.width,
         y: bbox.height,
       };
-    }
+    },
+
+    /**
+     * Merges 2 clip paths into one visually equal clip path
+     *
+     * **IMPORTANT**:\
+     * Does **NOT** clone the arguments, clone them proir if necessary.
+     *
+     * Creates a wrapper (group) that contains one clip path and is clipped by the other so content is kept where both overlap.
+     * Use this method if both the clip paths may have nested clip paths of their own, so assigning one to the other's clip path property is not possible.
+     *
+     * In order to handle the `inverted` property we follow logic described in the following cases:\
+     * **(1)** both clip paths are inverted - the clip paths pass the inverted prop to the wrapper and loose it themselves.\
+     * **(2)** one is inverted and the other isn't - the wrapper shouldn't become inverted and the inverted clip path must clip the non inverted one to produce an identical visual effect.\
+     * **(3)** both clip paths are not inverted - wrapper and clip paths remain unchanged.
+     *
+     * @memberOf fabric.util
+     * @param {fabric.Object} c1
+     * @param {fabric.Object} c2
+     * @returns {fabric.Object} merged clip path
+     */
+    mergeClipPaths: function (c1, c2) {
+      var a = c1, b = c2;
+      if (a.inverted && !b.inverted) {
+        //  case (2)
+        a = c2;
+        b = c1;
+      }
+      //  `b` becomes `a`'s clip path so we transform `b` to `a` coordinate plane
+      fabric.util.applyTransformToObject(
+        b,
+        fabric.util.multiplyTransformMatrices(
+          fabric.util.invertTransform(a.calcTransformMatrix()),
+          b.calcTransformMatrix()
+        )
+      );
+      //  assign the `inverted` prop to the wrapping group
+      var inverted = a.inverted && b.inverted;
+      if (inverted) {
+        //  case (1)
+        a.inverted = b.inverted = false;
+      }
+      return new fabric.Group([a], { clipPath: b, inverted: inverted });
+    },
   };
 })(typeof exports !== 'undefined' ? exports : this);

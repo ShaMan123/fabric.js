@@ -130,20 +130,6 @@
 
     /**
      * Returns the normalized point (rotated relative to center) in local coordinates
-     * @param {fabric.Point} point The point relative to canvas coordinate system
-     * @param {String} originX Horizontal origin: 'left', 'center' or 'right'
-     * @param {String} originY Vertical origin: 'top', 'center' or 'bottom'
-     * @return {fabric.Point}
-     */
-    toLocalPoint: function (point, originX, originY) {
-      if (this.group) {
-        point = fabric.util.transformPoint(point, fabric.util.invertTransform(this.group.calcTransformMatrix()));
-      }
-      return this.normalizePoint(point, originX, originY);
-    },
-
-    /**
-     * Returns the normalized point (rotated relative to center) in local coordinates
      * @param {fabric.Point} point The point relative to instance coordinate system
      * @param {String} originX Horizontal origin: 'left', 'center' or 'right'
      * @param {String} originY Vertical origin: 'top', 'center' or 'bottom'
@@ -163,6 +149,20 @@
         p2 = fabric.util.rotatePoint(p2, center, -degreesToRadians(this.angle));
       }
       return p2.subtractEquals(p);
+    },
+
+    /**
+     * Returns coordinates of a pointer relative to object's top left corner in object's plane
+     * @param {Event} e Event to operate upon
+     * @param {Object} [pointer] Pointer to operate upon (instead of event)
+     * @return {Object} Coordinates of a pointer (x, y)
+     */
+    getLocalPointer: function (e, pointer) {
+      pointer = pointer || this.canvas.getPointer(e);
+      return fabric.util.transformPoint(
+        new fabric.Point(pointer.x, pointer.y),
+        fabric.util.invertTransform(this.calcTransformMatrix())
+      ).addEquals(new fabric.Point(this.width / 2, this.height / 2));
     },
 
     /**

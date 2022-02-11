@@ -1203,26 +1203,26 @@
     /**
      * Execute the drawing operation for an object clipPath
      * @param {CanvasRenderingContext2D} ctx Context to render on
+     * @param {fabric.Object} clipPath
      */
-    drawClipPathOnCache: function(ctx) {
-      var path = this.clipPath;
+    drawClipPathOnCache: function(ctx, clipPath) {
       ctx.save();
       // DEBUG: uncomment this line, comment the following
       // ctx.globalAlpha = 0.4
-      if (path.inverted) {
+      if (clipPath.inverted) {
         ctx.globalCompositeOperation = 'destination-out';
       }
       else {
         ctx.globalCompositeOperation = 'destination-in';
       }
       //ctx.scale(1 / 2, 1 / 2);
-      if (path.absolutePositioned) {
+      if (clipPath.absolutePositioned) {
         var m = fabric.util.invertTransform(this.calcTransformMatrix());
         ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
       }
-      path.transform(ctx);
-      ctx.scale(1 / path.zoomX, 1 / path.zoomY);
-      ctx.drawImage(path._cacheCanvas, -path.cacheTranslationX, -path.cacheTranslationY);
+      clipPath.transform(ctx);
+      ctx.scale(1 / clipPath.zoomX, 1 / clipPath.zoomY);
+      ctx.drawImage(clipPath._cacheCanvas, -clipPath.cacheTranslationX, -clipPath.cacheTranslationY);
       ctx.restore();
     },
 
@@ -1241,22 +1241,26 @@
         this._renderBackground(ctx);
       }
       this._render(ctx);
-      this._drawClipPath(ctx);
+      this._drawClipPath(ctx, this.clipPath);
       this.fill = originalFill;
       this.stroke = originalStroke;
     },
 
-    _drawClipPath: function(ctx) {
-      var path = this.clipPath;
-      if (!path) { return; }
+    /**
+     * Prepare clipPath state and cache and draw it on instance's cache
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {fabric.Object} clipPath
+     */
+    _drawClipPath: function (ctx, clipPath) {
+      if (!clipPath) { return; }
       // needed to setup a couple of variables
       // path canvas gets overridden with this one.
       // TODO find a better solution?
-      path.canvas = this.canvas;
-      path.shouldCache();
-      path._transformDone = true;
-      path.renderCache({ forClipping: true });
-      this.drawClipPathOnCache(ctx);
+      clipPath.canvas = this.canvas;
+      clipPath.shouldCache();
+      clipPath._transformDone = true;
+      clipPath.renderCache({ forClipping: true });
+      this.drawClipPathOnCache(ctx, clipPath);
     },
 
     /**
@@ -1401,6 +1405,7 @@
 
     /**
      * Renders controls and borders for the object
+     * the context here is not transformed
      * @param {CanvasRenderingContext2D} ctx Context to render on
      * @param {Object} [styleOverride] properties to override the object style
      */
@@ -1422,7 +1427,7 @@
       if (this.flipX) {
         options.angle -= 180;
       }
-      ctx.rotate(degreesToRadians(options.angle));
+      ctx.rotate(degreesToRadians(this.group ? options.angle : this.angle));
       if (styleOverride.forActiveSelection || this.group) {
         drawBorders && this.drawBordersInGroup(ctx, options, styleOverride);
       }
@@ -1930,30 +1935,6 @@
     },
 
     /**
-     * Returns coordinates of a pointer relative to an object
-     * @param {Event} e Event to operate upon
-     * @param {Object} [pointer] Pointer to operate upon (instead of event)
-     * @return {Object} Coordinates of a pointer (x, y)
-     */
-    getLocalPointer: function (e, pointer) {
-      pointer = pointer || this.canvas.getPointer(e);
-      var pClicked = new fabric.Point(pointer.x, pointer.y),
-          objectLeftTop = this._getLeftTopCoords(),
-          angle = this.getTotalAngle();
-      if (this.group) {
-        objectLeftTop = fabric.util.transformPoint(objectLeftTop, this.group.calcTransformMatrix());
-      }
-      if (this.angle) {
-        pClicked = fabric.util.rotatePoint(
-          pClicked, objectLeftTop, degreesToRadians(-angle));
-      }
-      return {
-        x: pClicked.x - objectLeftTop.x,
-        y: pClicked.y - objectLeftTop.y
-      };
-    },
-
-    /**
      * Checks if object is decendant of target
      * Should be used instead of @link {fabric.Collection.contains} for performance reasons
      * @param {fabric.Object|fabric.StaticCanvas} target 
@@ -1997,6 +1978,16 @@
       if (this.globalCompositeOperation) {
         ctx.globalCompositeOperation = this.globalCompositeOperation;
       }
+    },
+
+    /**
+     * cancel instance's running animations
+     * override if necessary to dispose artifacts such as `clipPath`
+     */
+    dispose: function () {
+      if (fabric.runningAnimations) {
+        fabric.runningAnimations.cancelByTarget(this);
+      }
     }
   });
 
@@ -2014,6 +2005,15 @@
    */
   fabric.Object.NUM_FRACTION_DIGITS = 2;
 
+  /**
+   * Defines which properties should be enlivened from the object passed to {@link fabric.Object._fromObject}
+   * @static
+   * @memberOf fabric.Object
+   * @constant
+   * @type string[]
+   */
+  fabric.Object.ENLIVEN_PROPS = ['clipPath'];
+
   fabric.Object._fromObject = function(className, object, callback, extraParam) {
     var klass = fabric[className];
     object = clone(object, true);
@@ -2024,8 +2024,7 @@
       if (typeof patterns[1] !== 'undefined') {
         object.stroke = patterns[1];
       }
-      fabric.util.enlivenObjects([object.clipPath], function(enlivedProps) {
-        object.clipPath = enlivedProps[0];
+      fabric.util.enlivenObjectEnlivables(object, object, function () {
         var instance = extraParam ? new klass(object[extraParam], object) : new klass(object);
         callback && callback(instance);
       });
