@@ -450,20 +450,19 @@
         var newCenter = new fabric.Point(result.centerX, result.centerY);
         var diff = fabric.util.transformPoint(
           isFirstLayout ?
-            center.subtract(newCenter):
-            center.subtract(newCenter).subtract(this.__d),
+            center.subtract(new fabric.Point(result.centerMassX, result.centerMassY)):
+            center.subtract(newCenter),
           fabric.util.invertTransform(transform),
           true
         );
-        if (!this.__d) this.__d = center.subtract(newCenter);
         //  adjust objects to account for new center
-        diff.x !== 0 && diff.y !== 0 && this.forEachObject(function (object) {
+        this.forEachObject(function (object) {
           this._adjustObjectPosition(object, diff);
         }, this);
-        if (!isFirstLayout) {
-          //  clip path as well
-          this.clipPath && !this.clipPath.absolutePositioned
-            && this._adjustObjectPosition(this.clipPath, diff);
+        //  clip path as well
+        !isFirstLayout && this.clipPath && !this.clipPath.absolutePositioned
+          && this._adjustObjectPosition(this.clipPath, diff);
+        if (!newCenter.eq(center)) {
           //  set position
           this.setPositionByOrigin(newCenter, 'center', 'center');
           this.setCoords();
@@ -569,9 +568,12 @@
           }
           else {
             var bbox = this.getObjectsBoundingBox(objects);
+            var center = this.getCenterPoint();
             return {
-              centerX: bbox.centerX,
-              centerY: bbox.centerY,
+              centerX: hasX ? center.x : bbox.centerX,
+              centerY: hasY ? center.y : bbox.centerY,
+              centerMassX: bbox.centerX,
+              centerMassY: bbox.centerY,
               width: hasWidth ? this.width : bbox.width,
               height: hasHeight ? this.height : bbox.height,
             };
