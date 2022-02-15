@@ -570,8 +570,8 @@
             var bbox = this.getObjectsBoundingBox(objects);
             var center = this.getCenterPoint();
             return {
-              centerX: hasX ? center.x : bbox.centerX,
-              centerY: hasY ? center.y : bbox.centerY,
+              centerX: hasX || hasY ? center.x : bbox.centerX,
+              centerY: hasX || hasY ? center.y : bbox.centerY,
               centerMassX: bbox.centerX,
               centerMassY: bbox.centerY,
               width: hasWidth ? this.width : bbox.width,
