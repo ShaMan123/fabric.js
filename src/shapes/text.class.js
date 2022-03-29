@@ -882,11 +882,20 @@
     /**
      * Measure and return the info of a single grapheme.
      * needs the the info of previous graphemes already filled
-     * @private
+     * Override to customize measuring
+     * 
+     * @typedef {object} GraphemeBBox
+     * @property {number} width
+     * @property {number} height
+     * @property {number} kernedWidth
+     * @property {number} left
+     * @property {number} deltaY
+     * 
      * @param {String} grapheme to be measured
      * @param {Number} lineIndex index of the line where the char is
      * @param {Number} charIndex position in the line
      * @param {String} [prevGrapheme] character preceding the one to be measured
+     * @returns {GraphemeBBox} grapheme bbox
      */
     _getGraphemeBox: function(grapheme, lineIndex, charIndex, prevGrapheme, skipLeft) {
       var style = this.getCompleteStyleDeclaration(lineIndex, charIndex),
@@ -1513,6 +1522,15 @@
     },
 
     /**
+     * Override this method to customize grapheme splitting
+     * @param {string} value
+     * @returns {string[]} array of graphemes
+     */
+    graphemeSplit: function (value) {
+      return fabric.util.string.graphemeSplit(value);
+    },
+
+    /**
      * Returns the text as an array of lines.
      * @param {String} text text to split
      * @returns {Array} Lines in the text
@@ -1523,7 +1541,7 @@
           newLine = ['\n'],
           newText = [];
       for (var i = 0; i < lines.length; i++) {
-        newLines[i] = fabric.util.string.graphemeSplit(lines[i]);
+        newLines[i] = this.graphemeSplit(lines[i]);
         newText = newText.concat(newLines[i], newLine);
       }
       newText.pop();
@@ -1699,22 +1717,10 @@
    * @static
    * @memberOf fabric.Text
    * @param {Object} object plain js Object to create an instance from
-   * @param {Function} [callback] Callback to invoke when an fabric.Text instance is created
+   * @returns {Promise<fabric.Text>}
    */
-  fabric.Text.fromObject = function(object, callback) {
-    var objectCopy = clone(object), path = object.path;
-    delete objectCopy.path;
-    return fabric.Object._fromObject('Text', objectCopy, function(textInstance) {
-      if (path) {
-        fabric.Object._fromObject('Path', path, function(pathInstance) {
-          textInstance.set('path', pathInstance);
-          callback(textInstance);
-        }, 'path');
-      }
-      else {
-        callback(textInstance);
-      }
-    }, 'text');
+  fabric.Text.fromObject = function(object) {
+    return fabric.Object._fromObject(fabric.Text, object, 'text');
   };
 
   fabric.Text.genericFonts = ['sans-serif', 'serif', 'cursive', 'fantasy', 'monospace'];

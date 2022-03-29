@@ -52,7 +52,7 @@
     var options = { foo: 'bar' };
     fabric.util.animate(options);
     assert.propEqual(options, { foo: 'bar' }, 'options were mutated');
-    setTimeout(() => {
+    setTimeout(function() {
       assert.equal(fabric.runningAnimations.length, 0, 'animation should exist in registry');
       done();
     }, 1000);
@@ -324,7 +324,7 @@
       assert.equal(Math.round(object.get('left')), 1);
       assert.equal(Math.round(object.get('top')), 1);
 
-      assert.equal(changedInvocations, 2);
+      assert.ok(changedInvocations > 0);
       assert.equal(completeInvocations, 1);
 
       done();
@@ -334,6 +334,7 @@
 
   QUnit.test('animate with list of values', function(assert) {
     var done = assert.async();
+    var run = false;
 
     fabric.util.animate({
       startValue: [1, 2, 3],
@@ -350,10 +351,12 @@
         // Make sure mutations are not kept
         assert.ok(currentValue[0] <= 2, 'mutating callback values must not persist');
         currentValue[0] = 200;
+        run = true;
       },
       onComplete: function(endValue) {
         assert.equal(endValue.length, 3);
         assert.deepEqual(endValue, [2, 4, 6]);
+        assert.equal(run, true, 'something run');
         done();
       }
     })
@@ -399,6 +402,23 @@
       assert.equal(context, undefined, 'declarative abort should not be called after imperative abort was called');
       done();
     }, 100);
+  });
+
+  QUnit.test('animate with delay', function (assert) {
+    var done = assert.async();
+    var object = new fabric.Object({ left: 123, top: 124 });
+    var started = false;
+    var t = new Date();
+    var abort = object._animate('left', 223, {
+      onStart: function () {
+        started = true;
+        assert.gte(new Date() - t, 500, 'animation delay');
+        return false;
+      },
+      onComplete: done,
+      delay: 500
+    });
+    assert.ok(started === false);
   });
 
   QUnit.test('animate easing easeInQuad', function(assert) {
