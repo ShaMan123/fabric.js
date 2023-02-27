@@ -401,7 +401,8 @@ export class InteractiveFabricObject<
       ...styleOverride,
     };
     ctx.save();
-    ctx.globalAlpha = this.isMoving ? this.borderOpacityWhenMoving : 1;
+    ctx.globalAlpha =
+      this.isMoving || this.group?.isMoving ? this.borderOpacityWhenMoving : 1;
     shouldDrawBorders && this.drawBorders(ctx, styleOverride);
     shouldDrawControls && this.drawControls(ctx, styleOverride);
     ctx.restore();
