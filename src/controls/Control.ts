@@ -368,8 +368,10 @@ export class Control {
       ctx,
       styleOverride.borderDashArray || fabricObject.borderDashArray
     );
+    ctx.beginPath();
     ctx.moveTo(from.x, from.y);
     ctx.lineTo(to.x, to.y);
+    ctx.closePath();
     ctx.stroke();
     ctx.restore();
   }
