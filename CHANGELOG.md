@@ -307,6 +307,7 @@
 - chore(TS): type Object props [#8677](https://github.com/fabricjs/fabric.js/issues/8677)
 - fix(Geometry): `_getCoords` not respecting group [#8747](https://github.com/fabricjs/fabric.js/issues/8747)
 - chore(TS): remove default values from filter prototypes [#8742](https://github.com/fabricjs/fabric.js/issues/8742)
+- refactor(): Control connection rendering [#8745](https://github.com/fabricjs/fabric.js/issues/8745)
 - chore(TS): remove default values from Objects prototypes, ( filters in a followup ) [#8719](https://github.com/fabricjs/fabric.js/issues/8719)
 - fix(Intersection): bug causing selection edge case [#8735](https://github.com/fabricjs/fabric.js/pull/8735)
 - chore(TS): class interface for options/brevity [#8674](https://github.com/fabricjs/fabric.js/issues/8674)
