@@ -12,10 +12,11 @@ import { interactiveObjectDefaultValues } from './defaultValues';
 import { mapValues } from '../../util/internals';
 import { BBox } from '../../BBox/BBox';
 
-type TControlCoord = {
+export type TControlCoord = {
   position: Point;
   corner: TCornerPoint;
   touchCorner: TCornerPoint;
+  connection: Point;
 };
 
 export type TControlSet = Record<string, Control>;
@@ -231,15 +232,18 @@ export class InteractiveFabricObject<
   protected calcControlCoords(): Record<string, TControlCoord> {
     const legacyBBox = BBox.legacy(this);
     const coords = mapValues(this.controls, (control, key) => {
-      const position = control.positionHandler(
-        legacyBBox.getDimensionsVector(),
-        legacyBBox.getTransformation(),
-        legacyBBox.getTransformation(),
+      const v = legacyBBox.getDimensionsVector();
+      const t = legacyBBox.getTransformation();
+      const position = control.positionHandler(v, t, t, this, control);
+      const connectionPosition = control.connectionPositionHandler(
+        v,
+        t,
         this,
         control
       );
       return {
         position,
+        connection: connectionPosition,
         // Sets the coordinates that determine the interaction area of each control
         // note: if we would switch to ROUND corner area, all of this would disappear.
         // everything would resolve to a single point and a pythagorean theorem for the distance
@@ -356,15 +360,6 @@ export class InteractiveFabricObject<
   }
 
   /**
-   * @public override this function in order to customize the drawing of the control box, e.g. rounded corners, different border style.
-   * @param {CanvasRenderingContext2D} ctx ctx is rotated and translated so that (0,0) is at object's center
-   * @param {Point} size the control box size used
-   */
-  strokeBordersLegacy(ctx: CanvasRenderingContext2D, size: Point) {
-    // ctx.strokeRect(-size.x / 2, -size.y / 2, size.x, size.y);
-  }
-
-  /**
    * Draws borders of an object's bounding box.
    * Requires public properties: width, height
    * Requires public options: padding, borderColor
@@ -384,13 +379,6 @@ export class InteractiveFabricObject<
     ctx.save();
     ctx.strokeStyle = borderColor;
     this._setLineDash(ctx, borderDashArray);
-    ctx.lineWidth = this.borderScaleFactor;
-    // TODO: remove legacy?
-    ctx.save();
-    const legacy = BBox.legacy(this);
-    legacy.transform(ctx);
-    this.strokeBordersLegacy(ctx, legacy.getDimensionsVector());
-    ctx.restore();
     this.strokeBorders(ctx);
     ctx.restore();
   }
@@ -417,36 +405,6 @@ export class InteractiveFabricObject<
     shouldDrawBorders && this.drawBorders(ctx, styleOverride);
     shouldDrawControls && this.drawControls(ctx, styleOverride);
     ctx.restore();
-  }
-
-  /**
-   * Draws lines from a borders of an object's bounding box to controls that have `withConnection` property set.
-   * Requires public properties: width, height
-   * Requires public options: padding, borderColor
-   * @param {CanvasRenderingContext2D} ctx Context to draw on
-   * @param {Point} size object size x = width, y = height
-   */
-  drawControlsConnectingLines(
-    ctx: CanvasRenderingContext2D,
-    size: Point
-  ): void {
-    let shouldStroke = false;
-
-    ctx.beginPath();
-    this.forEachControl((control, key) => {
-      // in this moment, the ctx is centered on the object.
-      // width and height of the above function are the size of the bbox.
-      if (control.withConnection && control.getVisibility(this, key)) {
-        // reset movement for each control
-        shouldStroke = true;
-        ctx.moveTo(control.x * size.x, control.y * size.y);
-        ctx.lineTo(
-          control.x * size.x + control.offsetX,
-          control.y * size.y + control.offsetY
-        );
-      }
-    });
-    shouldStroke && ctx.stroke();
   }
 
   /**
@@ -478,8 +436,7 @@ export class InteractiveFabricObject<
     const coords = this.getControlCoords();
     this.forEachControl((control, key) => {
       if (control.getVisibility(this, key)) {
-        const { position } = coords[key];
-        control.render(ctx, position.x, position.y, options, this);
+        control.render(ctx, coords[key], options, this);
       }
     });
     ctx.restore();

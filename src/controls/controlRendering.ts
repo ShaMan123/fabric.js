@@ -1,5 +1,8 @@
 import { twoMathPi } from '../constants';
-import type { InteractiveFabricObject } from '../shapes/Object/InteractiveObject';
+import type {
+  InteractiveFabricObject,
+  TControlCoord,
+} from '../shapes/Object/InteractiveObject';
 import { calcPlaneRotation } from '../util/misc/matrix';
 import type { FabricObject } from '../shapes/Object/FabricObject';
 import type { Control } from './Control';
@@ -13,13 +16,14 @@ export type ControlRenderingStyleOverride = Partial<
     | 'cornerStrokeColor'
     | 'cornerDashArray'
     | 'transparentCorners'
+    | 'borderColor'
+    | 'borderDashArray'
   >
 >;
 
 export type ControlRenderer = (
   ctx: CanvasRenderingContext2D,
-  left: number,
-  top: number,
+  position: TControlCoord,
   styleOverride: ControlRenderingStyleOverride,
   fabricObject: InteractiveFabricObject
 ) => void;
@@ -30,16 +34,14 @@ export type ControlRenderer = (
  * cornerColor, cornerStrokeColor
  * plus the addition of offsetY and offsetX.
  * @param {CanvasRenderingContext2D} ctx context to render on
- * @param {Number} left x coordinate where the control center should be
- * @param {Number} top y coordinate where the control center should be
+ * @param {TControlCoord} position coordinate where the control center should be
  * @param {Object} styleOverride override for FabricObject controls style
  * @param {FabricObject} fabricObject the fabric object for which we are rendering controls
  */
 export function renderCircleControl(
   this: Control,
   ctx: CanvasRenderingContext2D,
-  left: number,
-  top: number,
+  coordinate: TControlCoord,
   styleOverride: ControlRenderingStyleOverride,
   fabricObject: InteractiveFabricObject
 ) {
@@ -55,8 +57,7 @@ export function renderCircleControl(
     stroke =
       !transparentCorners &&
       (styleOverride.cornerStrokeColor || fabricObject.cornerStrokeColor);
-  let myLeft = left,
-    myTop = top,
+  let { x, y } = coordinate,
     size;
   ctx.save();
   ctx.fillStyle = styleOverride.cornerColor || fabricObject.cornerColor || '';
@@ -66,18 +67,18 @@ export function renderCircleControl(
   if (xSize > ySize) {
     size = xSize;
     ctx.scale(1.0, ySize / xSize);
-    myTop = (top * xSize) / ySize;
+    y = (coordinate.y * xSize) / ySize;
   } else if (ySize > xSize) {
     size = ySize;
     ctx.scale(xSize / ySize, 1.0);
-    myLeft = (left * ySize) / xSize;
+    x = (coordinate.x * ySize) / xSize;
   } else {
     size = xSize;
   }
   // this is still wrong
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.arc(myLeft, myTop, size / 2, 0, twoMathPi, false);
+  ctx.arc(x, y, size / 2, 0, twoMathPi, false);
   ctx[methodName]();
   if (stroke) {
     ctx.stroke();
@@ -91,16 +92,14 @@ export function renderCircleControl(
  * cornerColor, cornerStrokeColor
  * plus the addition of offsetY and offsetX.
  * @param {CanvasRenderingContext2D} ctx context to render on
- * @param {Number} left x coordinate where the control center should be
- * @param {Number} top y coordinate where the control center should be
+ * @param {TControlCoord} position coordinate where the control center should be
  * @param {Object} styleOverride override for FabricObject controls style
  * @param {FabricObject} fabricObject the fabric object for which we are rendering controls
  */
 export function renderSquareControl(
   this: Control,
   ctx: CanvasRenderingContext2D,
-  left: number,
-  top: number,
+  position: TControlCoord,
   styleOverride: ControlRenderingStyleOverride,
   fabricObject: InteractiveFabricObject
 ) {
@@ -124,7 +123,7 @@ export function renderSquareControl(
     styleOverride.cornerStrokeColor || fabricObject.cornerStrokeColor || '';
   // this is still wrong
   ctx.lineWidth = 1;
-  ctx.translate(left, top);
+  ctx.translate(position.x, position.y);
   //  angle is relative to canvas plane - todo should be the viewport!
   ctx.rotate(calcPlaneRotation(fabricObject.calcTransformMatrix()));
   // this does not work, and fixed with ( && ) does not make sense.
