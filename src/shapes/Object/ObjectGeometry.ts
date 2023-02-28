@@ -194,7 +194,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     const coords = [tl, tr, br, bl];
     if (this.group) {
       const t = this.group.calcTransformMatrix();
-      return coords.map((p) => transformPoint(p, t));
+      return coords.map((p) => p.transform(t));
     }
     return coords;
   }
