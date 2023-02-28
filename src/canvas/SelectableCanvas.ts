@@ -748,11 +748,11 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
   /**
    * Checks if the point is inside the object selection area including padding
    * @param {FabricObject} obj Object to test against
-   * @param {Object} [pointer] point in scene coordinates
+   * @param {Point} [scenePoint] point in scene coordinates
    * @return {Boolean} true if point is contained within an area of given object
    * @private
    */
-  private _pointIsInObjectSelectionArea(obj: FabricObject, point: Point) {
+  private _pointIsInObjectSelectionArea(obj: FabricObject, scenePoint: Point) {
     // getCoords will already take care of group de-nesting
     let coords = obj.getCoords();
     const viewportZoom = this.getZoom();
@@ -783,7 +783,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
       // the idea behind this is that outside target check we don't need ot know
       // where those coords are
     }
-    return Intersection.isPointInPolygon(point, coords);
+    return Intersection.isPointInPolygon(scenePoint, coords);
   }
 
   /**
