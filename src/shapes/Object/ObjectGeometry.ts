@@ -221,7 +221,6 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
       this.getCoords(),
       other.getCoords()
     );
-
     return (
       intersection.status === 'Intersection' ||
       intersection.status === 'Coincident' ||
