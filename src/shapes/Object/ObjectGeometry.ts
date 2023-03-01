@@ -424,11 +424,12 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * those never change with zoom or viewport changes.
    * @return {TCornerPoint}
    */
-  calcACoords(applyViewportTransform = false): TCornerPoint {
+  calcCoords<T extends Point, K extends string>(
+    originPoints: Record<K, T>,
+    applyViewportTransform = false
+  ) {
     const center = this.getRelativeCenterPoint();
     const dim = this._getTransformedDimensions();
-    // padding is not affected by viewportTransform
-    // aCoords are, so we send the padding vector to our plane
     const paddingVector = sendVectorToPlane(
       new Point(this.padding, this.padding),
       undefined,
@@ -436,27 +437,32 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     );
     const finalMatrix = multiplyTransformMatrixArray([
       applyViewportTransform && this.getViewportTransform(),
-      this.group?.calcTransformMatrix() || iMatrix,
+      this.group?.calcTransformMatrix(),
       [1, 0, 0, 1, center.x, center.y],
       createRotateMatrix({ angle: this.angle }),
     ]);
-    const { angle: totalAngle } = qrDecompose(finalMatrix);
-    const factorize = (x: number, y: number) => {
-      const paddingRotationMatrix = calcRotateMatrix({
-        // the vector initially points to 45deg so we rotate it back
-        angle: -45 + totalAngle + radiansToDegrees(Math.atan2(y, x)),
-      });
-      return new Point(x, y)
+    return mapValues(originPoints, (point) => {
+      return point
         .multiply(dim)
         .transform(finalMatrix)
-        .add(paddingVector.transform(paddingRotationMatrix, true));
-    };
-    return {
-      tl: factorize(-0.5, -0.5),
-      tr: factorize(0.5, -0.5),
-      bl: factorize(-0.5, 0.5),
-      br: factorize(0.5, 0.5),
-    };
+        .add(
+          point.multiply(paddingVector).rotate(calcPlaneRotation(finalMatrix))
+        );
+    });
+  }
+
+  /**
+   * Calculates the coordinates of the 4 corner of the bbox, in absolute coordinates.
+   * those never change with zoom or viewport changes.
+   * @return {TCornerPoint}
+   */
+  calcACoords(): TCornerPoint {
+    return this.calcCoords({
+      tl: new Point(-0.5, -0.5),
+      tr: new Point(0.5, -0.5),
+      bl: new Point(-0.5, 0.5),
+      br: new Point(0.5, 0.5),
+    });
   }
 
   /**
