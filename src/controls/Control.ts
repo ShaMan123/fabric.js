@@ -8,6 +8,9 @@ import { Intersection } from '../Intersection';
 import { Point } from '../Point';
 import type { InteractiveFabricObject } from '../shapes/Object/InteractiveObject';
 import type { TCornerPoint, TDegree, TMat2D } from '../typedefs';
+import type { FabricObject } from '../shapes/Object/Object';
+import { rotateVector } from '../util/misc/vectors';
+import { degreesToRadians } from '../util/misc/radiansDegreesConversion';
 import {
   createRotateMatrix,
   createScaleMatrix,
@@ -294,9 +297,20 @@ export class Control {
     fabricObject: InteractiveFabricObject,
     currentControl: Control
   ) {
-    return new Point(this.x, this.y)
-      .transform(finalMatrix)
-      .add(new Point(this.offsetX, this.offsetY));
+    const position = new Point(this.x, this.y)
+      .multiply(dim)
+      .transform(finalMatrix);
+    const offset = rotateVector(
+      new Point(this.offsetX, this.offsetY),
+      degreesToRadians(fabricObject.getTotalAngle())
+    );
+    return position.add(offset);
+    return (
+      new Point(this.x, this.y)
+        .transform(finalMatrix)
+        // .multiply(dim)
+        .add(new Point(this.offsetX, this.offsetY))
+    );
     return new Point(this.x, this.y)
       .multiply(dim)
       .add(fabricObject.getCenterPoint());
