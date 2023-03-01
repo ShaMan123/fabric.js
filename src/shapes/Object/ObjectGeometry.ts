@@ -17,6 +17,7 @@ import {
   multiplyTransformMatrices,
   transformPoint,
   calcPlaneRotation,
+  multiplyTransformMatrixArray,
 } from '../../util/misc/matrix';
 import { radiansToDegrees } from '../../util/misc/radiansDegreesConversion';
 import type { Canvas } from '../../canvas/Canvas';
@@ -410,19 +411,15 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * @return {TCornerPoint}
    */
   calcACoords(): TCornerPoint {
-    const rotateMatrix = createRotateMatrix({ angle: this.angle }),
-      center = this.getRelativeCenterPoint(),
-      translateMatrix = [1, 0, 0, 1, center.x, center.y] as TMat2D,
-      positionMatrix = multiplyTransformMatrices(translateMatrix, rotateMatrix),
-      finalMatrix = this.group
-        ? multiplyTransformMatrices(
-            this.group.calcTransformMatrix(),
-            positionMatrix
-          )
-        : positionMatrix,
+    const center = this.getRelativeCenterPoint(),
       dim = this._getTransformedDimensions(),
       w = dim.x / 2,
       h = dim.y / 2;
+    const finalMatrix = multiplyTransformMatrixArray([
+      this.group?.calcTransformMatrix() || iMatrix,
+      [1, 0, 0, 1, center.x, center.y],
+      createRotateMatrix({ angle: this.angle }),
+    ]);
     return {
       // corners
       tl: transformPoint({ x: -w, y: -h }, finalMatrix),

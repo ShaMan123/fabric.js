@@ -406,15 +406,6 @@
     assert.equal(parsed.alignY, 'min');
   });
 
-  QUnit.test('multiplyTransformMatrixChain', function(assert) {
-    assert.ok(typeof fabric.util.multiplyTransformMatrixChain === 'function');
-    var m1 = [1, 1, 1, 1, 1, 1], m2 = [1, 1, 1, 1, 1, 1], m3;
-    m3 = fabric.util.multiplyTransformMatrixChain([m1, m2]);
-    assert.deepEqual(m3, [2, 2, 2, 2, 3, 3]);
-    m3 = fabric.util.multiplyTransformMatrixChain([m1, m2], true);
-    assert.deepEqual(m3, [2, 2, 2, 2, 0, 0]);
-  });
-
   QUnit.test('multiplyTransformMatrices', function(assert) {
     assert.ok(typeof fabric.util.multiplyTransformMatrices === 'function');
     var m1 = [1, 1, 1, 1, 1, 1], m2 = [1, 1, 1, 1, 1, 1], m3;
@@ -529,7 +520,7 @@
     (function() {
       const initialVector = new fabric.Point(1,0),
         finalVector = new fabric.Point(0,1);
-      
+
       assert.equal(
         fabric.util.isBetweenVectors(
           new fabric.Point(0.5, 0.5),
@@ -608,7 +599,7 @@
     (function() {
       const initialVector = new fabric.Point(1, 0),
         finalVector = new fabric.Point(1, 0.5);
-      
+
       assert.equal(
         fabric.util.isBetweenVectors(
           new fabric.Point(1, 0.25),
@@ -649,7 +640,7 @@
         fabric.util.isBetweenVectors(
           new fabric.Point(1, 0.2),
           initialVector,
-          finalVector 
+          finalVector
         ),
         true,
         'isBetweenVectors acute angle #5'
@@ -669,7 +660,7 @@
     (function() {
       const initialVector = new fabric.Point(1, 0.5),
         finalVector = new fabric.Point(1, 0);
-      
+
       assert.equal(
         fabric.util.isBetweenVectors(
           new fabric.Point(1, 0.25),
@@ -710,7 +701,7 @@
         fabric.util.isBetweenVectors(
           new fabric.Point(1, -0.2),
           initialVector,
-          finalVector 
+          finalVector
         ),
         true,
         'isBetweenVectors obtuse angle #5'
