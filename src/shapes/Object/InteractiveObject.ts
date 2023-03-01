@@ -7,6 +7,7 @@ import {
   calcDimensionsMatrix,
   createRotateMatrix,
   multiplyTransformMatrices,
+  multiplyTransformMatrixChain,
   qrDecompose,
 } from '../../util/misc/matrix';
 import type { Control } from '../../controls/Control';
@@ -239,21 +240,18 @@ export class InteractiveFabricObject<
       rMatrix = createRotateMatrix({
         angle: this.getTotalAngle() - (!!this.group && this.flipX ? 180 : 0),
       }),
-      positionMatrix = multiplyTransformMatrices(tMatrix, rMatrix),
-      startMatrix = multiplyTransformMatrices(vpt, positionMatrix),
-      finalMatrix = multiplyTransformMatrices(startMatrix, [
-        1 / vpt[0],
-        0,
-        0,
-        1 / vpt[3],
-        0,
-        0,
-      ]),
       transformOptions = this.group
         ? qrDecompose(this.calcTransformMatrix())
         : undefined,
       dim = this._calculateCurrentDimensions(transformOptions),
       coords: Record<string, TOCoord> = {};
+
+    const finalMatrix = multiplyTransformMatrixChain([
+      vpt,
+      tMatrix,
+      rMatrix,
+      [1 / vpt[0], 0, 0, 1 / vpt[3], 0, 0],
+    ]);
 
     this.forEachControl((control, key) => {
       const position = control.positionHandler(dim, finalMatrix, this, control);
