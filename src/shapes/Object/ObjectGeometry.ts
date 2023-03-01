@@ -25,6 +25,20 @@ import type { StaticCanvas } from '../../canvas/StaticCanvas';
 import { ObjectOrigin } from './ObjectOrigin';
 import type { ObjectEvents } from '../../EventTypeDefs';
 import type { ControlProps } from './types/ControlProps';
+import { sendVectorToPlane } from '../../util/misc/planeChange';
+import { mapValues } from '../../util/internals';
+
+type TLineDescriptor = {
+  o: Point;
+  d: Point;
+};
+
+type TBBoxLines = {
+  topline: TLineDescriptor;
+  leftline: TLineDescriptor;
+  bottomline: TLineDescriptor;
+  rightline: TLineDescriptor;
+};
 
 type TMatrixCache = {
   key: string;
@@ -410,23 +424,62 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * those never change with zoom or viewport changes.
    * @return {TCornerPoint}
    */
-  calcACoords(): TCornerPoint {
-    const center = this.getRelativeCenterPoint(),
-      dim = this._getTransformedDimensions(),
-      w = dim.x / 2,
-      h = dim.y / 2;
+  calcACoords(applyViewportTransform = false): TCornerPoint {
+    const center = this.getRelativeCenterPoint();
+    const dim = this._getTransformedDimensions();
+    // padding is not affected by viewportTransform
+    // aCoords are, so we send the padding vector to our plane
+    const paddingVector = sendVectorToPlane(
+      new Point(this.padding, this.padding),
+      undefined,
+      this.getViewportTransform()
+    );
     const finalMatrix = multiplyTransformMatrixArray([
+      applyViewportTransform && this.getViewportTransform(),
       this.group?.calcTransformMatrix() || iMatrix,
       [1, 0, 0, 1, center.x, center.y],
       createRotateMatrix({ angle: this.angle }),
     ]);
-    return {
-      // corners
-      tl: transformPoint({ x: -w, y: -h }, finalMatrix),
-      tr: transformPoint({ x: w, y: -h }, finalMatrix),
-      bl: transformPoint({ x: -w, y: h }, finalMatrix),
-      br: transformPoint({ x: w, y: h }, finalMatrix),
+    const { angle: totalAngle } = qrDecompose(finalMatrix);
+    const factorize = (x: number, y: number) => {
+      const paddingRotationMatrix = calcRotateMatrix({
+        // the vector initially points to 45deg so we rotate it back
+        angle: -45 + totalAngle + radiansToDegrees(Math.atan2(y, x)),
+      });
+      return new Point(x, y)
+        .multiply(dim)
+        .transform(finalMatrix)
+        .add(paddingVector.transform(paddingRotationMatrix, true));
     };
+    return {
+      tl: factorize(-0.5, -0.5),
+      tr: factorize(0.5, -0.5),
+      bl: factorize(-0.5, 0.5),
+      br: factorize(0.5, 0.5),
+    };
+  }
+
+  /**
+   * return the coordinate of the 4 corners of the bounding box in HTMLCanvasElement coordinates
+   * used for bounding box interactivity with the mouse
+   * @returns {TCornerPoint}
+   */
+  calcLineCoords(aCoords = this.calcACoords()): TCornerPoint {
+    const vpt = this.getViewportTransform();
+    const coords = mapValues(aCoords, (coord) => coord.transform(vpt));
+
+    // setTimeout(() => {
+    //   const canvas = this.canvas;
+    //   if (!canvas) return;
+    //   canvas.clearContext(canvas.contextTop);
+    //   canvas.contextTop.fillStyle = 'blue';
+    //   Object.keys(coords).forEach((key) => {
+    //     const control = coords[key];
+    //     canvas.contextTop.fillRect(control.x, control.y, 3, 3);
+    //   });
+    // }, 50);
+
+    return coords;
   }
 
   /**
