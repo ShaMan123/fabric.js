@@ -251,10 +251,10 @@ export class InteractiveFabricObject<
     const [tl, tr, bl, br] = this.getCoords();
     const center = tl.midPointFrom(br);
     const { width, height } = makeBoundingBoxFromPoints([tl, tr, bl, br]);
-    const dimVector = this.calcDimensionsVector();
     // @TODO: Are we missing padding here?
-    const b1 = createVector(br, tr).divide(dimVector);
-    const b2 = createVector(br, bl).divide(dimVector);
+    const dimVector = new Point(width, height); //this.calcDimensionsVector();
+    const b1 = createVector(tl, tr); //.divide(dimVector);
+    const b2 = createVector(tl, bl); //.divide(dimVector);
     const t: TMat2D = [b1.x, b1.y, b2.x, b2.y, center.x, center.y];
     const coords = mapValues(this.controls, (control, key) => {
       // const position = this.calcViewportCoord(
@@ -263,6 +263,7 @@ export class InteractiveFabricObject<
       // );
       const position = control.positionHandler(
         new Point(width, height),
+        t,
         t,
         this,
         control
