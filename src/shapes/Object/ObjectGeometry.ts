@@ -11,13 +11,11 @@ import { Intersection } from '../../Intersection';
 import { Point } from '../../Point';
 import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 import {
-  createRotateMatrix,
   composeMatrix,
   invertTransform,
   multiplyTransformMatrices,
   transformPoint,
   calcPlaneRotation,
-  multiplyTransformMatrixArray,
 } from '../../util/misc/matrix';
 import { radiansToDegrees } from '../../util/misc/radiansDegreesConversion';
 import type { Canvas } from '../../canvas/Canvas';
@@ -25,27 +23,13 @@ import type { StaticCanvas } from '../../canvas/StaticCanvas';
 import { ObjectOrigin } from './ObjectOrigin';
 import type { ObjectEvents } from '../../EventTypeDefs';
 import type { ControlProps } from './types/ControlProps';
-import { sendVectorToPlane } from '../../util/misc/planeChange';
 import { mapValues } from '../../util/internals';
-
-type TLineDescriptor = {
-  o: Point;
-  d: Point;
-};
-
-type TBBoxLines = {
-  topline: TLineDescriptor;
-  leftline: TLineDescriptor;
-  bottomline: TLineDescriptor;
-  rightline: TLineDescriptor;
-};
+import { getUnitVector, rotateVector } from '../../util/misc/vectors';
 
 type TMatrixCache = {
   key: string;
   value: TMat2D;
 };
-
-type TACoords = TCornerPoint;
 
 export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   extends ObjectOrigin<EventSpec>
@@ -61,7 +45,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * The coordinates get updated with {@link setCoords}.
    * You can calculate them without updating with {@link calcACoords()}
    */
-  protected declare aCoords?: TACoords;
+  protected declare aCoords?: TCornerPoint;
 
   /**
    * storage cache for object transform matrix
@@ -419,35 +403,58 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     return this.canvas?.viewportTransform || (iMatrix.concat() as TMat2D);
   }
 
-  /**
-   * Calculates the coordinates of the 4 corner of the bbox, in absolute coordinates.
-   * those never change with zoom or viewport changes.
-   * @return {TCornerPoint}
-   */
-  calcCoords<T extends Point, K extends string>(
-    originPoints: Record<K, T>,
-    applyViewportTransform = false
+  protected calcCoord(
+    origin: Point,
+    offset = new Point(),
+    {
+      applyViewportTransform = false,
+      padding = 0,
+    }: {
+      applyViewportTransform?: boolean;
+      padding?: number;
+    } = {}
   ) {
-    const center = this.getRelativeCenterPoint();
-    const dim = this._getTransformedDimensions();
-    const paddingVector = sendVectorToPlane(
-      new Point(this.padding, this.padding),
-      undefined,
-      this.getViewportTransform()
+    const vpt = applyViewportTransform && this.getViewportTransform();
+    const t = vpt
+      ? multiplyTransformMatrices(vpt, this.calcTransformMatrix())
+      : this.calcTransformMatrix();
+    const dimVector = origin
+      .multiply(
+        new Point(this.width, this.height).scalarAdd(
+          !this.strokeUniform ? this.strokeWidth * 2 : 0
+        )
+      )
+      .transform(t, true);
+    const strokeUniformVector = getUnitVector(dimVector).scalarMultiply(
+      this.strokeUniform ? this.strokeWidth * 2 : 0
     );
-    const finalMatrix = multiplyTransformMatrixArray([
-      applyViewportTransform && this.getViewportTransform(),
-      this.group?.calcTransformMatrix(),
-      [1, 0, 0, 1, center.x, center.y],
-      createRotateMatrix({ angle: this.angle }),
-    ]);
-    return mapValues(originPoints, (point) => {
-      return point
-        .multiply(dim)
-        .transform(finalMatrix)
-        .add(
-          point.multiply(paddingVector).rotate(calcPlaneRotation(finalMatrix))
-        );
+    const offsetVector = rotateVector(
+      offset
+        .add(origin.scalarMultiply(padding * 2))
+        .multiply(this.getFlipFactor()),
+      calcPlaneRotation(t)
+    );
+    const realCenter = vpt
+      ? this.getCenterPoint().transform(vpt)
+      : this.getCenterPoint();
+    return realCenter.add(dimVector).add(strokeUniformVector).add(offsetVector);
+  }
+
+  /**
+   * **CAUTION**
+   * can be used only after aCoords are set
+   * @param origin
+   * @param offset
+   * @returns
+   */
+  protected calcViewportCoord(
+    origin: Point,
+    offset: Point,
+    padding = this.padding
+  ) {
+    return this.calcCoord(origin, offset, {
+      applyViewportTransform: true,
+      padding,
     });
   }
 
@@ -457,12 +464,15 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * @return {TCornerPoint}
    */
   calcACoords(): TCornerPoint {
-    return this.calcCoords({
-      tl: new Point(-0.5, -0.5),
-      tr: new Point(0.5, -0.5),
-      bl: new Point(-0.5, 0.5),
-      br: new Point(0.5, 0.5),
-    });
+    return mapValues(
+      {
+        tl: new Point(-0.5, -0.5),
+        tr: new Point(0.5, -0.5),
+        bl: new Point(-0.5, 0.5),
+        br: new Point(0.5, 0.5),
+      },
+      (origin) => this.calcCoord(origin)
+    );
   }
 
   /**
@@ -474,21 +484,21 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     const vpt = this.getViewportTransform();
     const coords = mapValues(aCoords, (coord) => coord.transform(vpt));
 
-    // // debug code
-    // setTimeout(() => {
-    //   const canvas = this.canvas;
-    //   if (!canvas) return;
-    //   const ctx = canvas.contextTop;
-    //   canvas.clearContext(ctx);
-    //   ctx.fillStyle = 'blue';
-    //   Object.keys(coords).forEach((key) => {
-    //     const control = coords[key];
-    //     ctx.beginPath();
-    //     ctx.ellipse(control.x, control.y, 6, 6, 0, 0, 360);
-    //     ctx.closePath();
-    //     ctx.fill();
-    //   });
-    // }, 50);
+    // debug code
+    setTimeout(() => {
+      const canvas = this.canvas;
+      if (!canvas) return;
+      const ctx = canvas.contextTop;
+      canvas.clearContext(ctx);
+      ctx.fillStyle = 'blue';
+      Object.keys(coords).forEach((key) => {
+        const control = coords[key];
+        ctx.beginPath();
+        ctx.ellipse(control.x, control.y, 6, 6, 0, 0, 360);
+        ctx.closePath();
+        ctx.fill();
+      });
+    }, 50);
 
     return coords;
   }
