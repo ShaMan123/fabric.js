@@ -403,6 +403,34 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     return this.canvas?.viewportTransform || (iMatrix.concat() as TMat2D);
   }
 
+  protected calcDimensionsVector(
+    origin = new Point(1, 1),
+    // @TODO pass t instead
+    {
+      applyViewportTransform = false,
+    }: {
+      applyViewportTransform?: boolean;
+    } = {}
+  ) {
+    const vpt = applyViewportTransform ? this.getViewportTransform() : iMatrix;
+    const dimVector = origin
+      .multiply(new Point(this.width, this.height))
+      .scalarAdd(!this.strokeUniform ? this.strokeWidth * 2 : 0)
+      .transform(
+        applyViewportTransform
+          ? multiplyTransformMatrices(
+              this.getViewportTransform(),
+              this.calcTransformMatrix()
+            )
+          : this.calcTransformMatrix(),
+        true
+      );
+    const strokeUniformVector = getUnitVector(dimVector).scalarMultiply(
+      this.strokeUniform ? this.strokeWidth * 2 : 0
+    );
+    return dimVector.add(strokeUniformVector);
+  }
+
   protected calcCoord(
     origin: Point,
     offset = new Point(),
@@ -418,26 +446,16 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     const t = vpt
       ? multiplyTransformMatrices(vpt, this.calcTransformMatrix())
       : this.calcTransformMatrix();
-    const dimVector = origin
-      .multiply(
-        new Point(this.width, this.height).scalarAdd(
-          !this.strokeUniform ? this.strokeWidth * 2 : 0
-        )
-      )
-      .transform(t, true);
-    const strokeUniformVector = getUnitVector(dimVector).scalarMultiply(
-      this.strokeUniform ? this.strokeWidth * 2 : 0
-    );
     const offsetVector = rotateVector(
-      offset
-        .add(origin.scalarMultiply(padding * 2))
-        .multiply(this.getFlipFactor()),
+      offset.add(origin.scalarMultiply(padding * 2)),
       calcPlaneRotation(t)
     );
     const realCenter = vpt
       ? this.getCenterPoint().transform(vpt)
       : this.getCenterPoint();
-    return realCenter.add(dimVector).add(strokeUniformVector).add(offsetVector);
+    return realCenter
+      .add(this.calcDimensionsVector(origin, { applyViewportTransform }))
+      .add(offsetVector);
   }
 
   /**
@@ -473,34 +491,6 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
       },
       (origin) => this.calcCoord(origin)
     );
-  }
-
-  /**
-   * return the coordinate of the 4 corners of the bounding box in HTMLCanvasElement coordinates
-   * used for bounding box interactivity with the mouse
-   * @returns {TCornerPoint}
-   */
-  calcLineCoords(aCoords = this.calcACoords()): TCornerPoint {
-    const vpt = this.getViewportTransform();
-    const coords = mapValues(aCoords, (coord) => coord.transform(vpt));
-
-    // debug code
-    setTimeout(() => {
-      const canvas = this.canvas;
-      if (!canvas) return;
-      const ctx = canvas.contextTop;
-      canvas.clearContext(ctx);
-      ctx.fillStyle = 'blue';
-      Object.keys(coords).forEach((key) => {
-        const control = coords[key];
-        ctx.beginPath();
-        ctx.ellipse(control.x, control.y, 6, 6, 0, 0, 360);
-        ctx.closePath();
-        ctx.fill();
-      });
-    }, 50);
-
-    return coords;
   }
 
   /**
