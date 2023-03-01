@@ -5,9 +5,7 @@ import { degreesToRadians } from '../../util/misc/radiansDegreesConversion';
 import type { TQrDecomposeOut } from '../../util/misc/matrix';
 import {
   calcDimensionsMatrix,
-  createRotateMatrix,
   multiplyTransformMatrices,
-  multiplyTransformMatrixArray,
   qrDecompose,
 } from '../../util/misc/matrix';
 import type { Control } from '../../controls/Control';
@@ -19,6 +17,9 @@ import type { FabricObjectProps } from './types/FabricObjectProps';
 import type { TFabricObjectProps, SerializedObjectProps } from './types';
 import { createObjectDefaultControls } from '../../controls/commonControls';
 import { interactiveObjectDefaultValues } from './defaultValues';
+import { mapValues } from '../../util/internals';
+import { createVector } from '../../util/misc/vectors';
+import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 
 export type TOCoord = Point & {
   corner: TCornerPoint;
@@ -234,51 +235,59 @@ export class InteractiveFabricObject<
    * @return {Record<string, TOCoord>}
    */
   calcOCoords(): Record<string, TOCoord> {
-    const vpt = this.getViewportTransform(),
-      center = this.getCenterPoint(),
-      tMatrix = [1, 0, 0, 1, center.x, center.y] as TMat2D,
-      rMatrix = createRotateMatrix({
-        angle: this.getTotalAngle() - (!!this.group && this.flipX ? 180 : 0),
-      }),
-      transformOptions = this.group
-        ? qrDecompose(this.calcTransformMatrix())
-        : undefined,
-      dim = this._calculateCurrentDimensions(transformOptions),
-      coords: Record<string, TOCoord> = {};
-
-    const finalMatrix = multiplyTransformMatrixArray([
-      vpt,
-      tMatrix,
-      rMatrix,
-      [1 / vpt[0], 0, 0, 1 / vpt[3], 0, 0],
-    ]);
-
-    this.forEachControl((control, key) => {
-      const position = control.positionHandler(dim, finalMatrix, this, control);
-      // coords[key] are sometimes used as points. Those are points to which we add
-      // the property corner and touchCorner from `_calcCornerCoords`.
-      // don't remove this assign for an object spread.
-      coords[key] = Object.assign(
+    // const coords: Record<string, TOCoord> = mapValues(
+    //   this.controls,
+    //   (control, key) => {
+    //     const position = this.calcViewportCoord(
+    //       new Point(control.x, control.y),
+    //       new Point(control.offsetX, control.offsetY)
+    //     );
+    //     return Object.assign(
+    //       position,
+    //       this._calcCornerCoords(this.controls[key], position)
+    //     );
+    //   }
+    // );
+    const [tl, tr, bl, br] = this.getCoords();
+    const center = tl.midPointFrom(br);
+    const { width, height } = makeBoundingBoxFromPoints([tl, tr, bl, br]);
+    const dimVector = this.calcDimensionsVector();
+    // @TODO: Are we missing padding here?
+    const b1 = createVector(br, tr).divide(dimVector);
+    const b2 = createVector(br, bl).divide(dimVector);
+    const t: TMat2D = [b1.x, b1.y, b2.x, b2.y, center.x, center.y];
+    const coords = mapValues(this.controls, (control, key) => {
+      // const position = this.calcViewportCoord(
+      //   new Point(control.x, control.y),
+      //   new Point(control.offsetX, control.offsetY)
+      // );
+      const position = control.positionHandler(
+        new Point(width, height),
+        t,
+        this,
+        control
+      );
+      return Object.assign(
         position,
-        this._calcCornerCoords(control, position)
+        this._calcCornerCoords(this.controls[key], position)
       );
     });
 
-    // // debug code
-    // setTimeout(() => {
-    //   const canvas = this.canvas;
-    //   if (!canvas) return;
-    //   const ctx = canvas.contextTop;
-    //   // canvas.clearContext(ctx);
-    //   ctx.fillStyle = 'magenta';
-    //   Object.keys(coords).forEach((key) => {
-    //     const control = coords[key];
-    //     ctx.beginPath();
-    //     ctx.ellipse(control.x, control.y, 3, 3, 0, 0, 360);
-    //     ctx.closePath();
-    //     ctx.fill();
-    //   });
-    // }, 50);
+    // debug code
+    setTimeout(() => {
+      const canvas = this.canvas;
+      if (!canvas) return;
+      const ctx = canvas.contextTop;
+      // canvas.clearContext(ctx);
+      ctx.fillStyle = 'magenta';
+      Object.keys(coords).forEach((key) => {
+        const control = coords[key];
+        ctx.beginPath();
+        ctx.ellipse(control.x, control.y, 3, 3, 0, 0, 360);
+        ctx.closePath();
+        ctx.fill();
+      });
+    }, 50);
 
     return coords;
   }
@@ -330,16 +339,14 @@ export class InteractiveFabricObject<
    * with the control, the control's key and the object that is calling the iterator
    * @param {Function} fn function to iterate over the controls over
    */
-  forEachControl(
+  forEachControl<R>(
     fn: (
       control: Control,
       key: string,
       fabricObject: InteractiveFabricObject
-    ) => any
+    ) => R
   ) {
-    for (const i in this.controls) {
-      fn(this.controls[i], i, this);
-    }
+    return mapValues(this.controls, (value, key) => fn(value, key, this));
   }
 
   /**
