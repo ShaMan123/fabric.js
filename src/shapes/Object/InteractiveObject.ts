@@ -1,10 +1,11 @@
 import { Point, ZERO } from '../../Point';
-import type { TCornerPoint, TDegree } from '../../typedefs';
+import type { TCornerPoint, TDegree, TMat2D } from '../../typedefs';
 import { FabricObject } from './Object';
 import { degreesToRadians } from '../../util/misc/radiansDegreesConversion';
 import type { TQrDecomposeOut } from '../../util/misc/matrix';
 import {
   calcDimensionsMatrix,
+  createRotateMatrix,
   multiplyTransformMatrices,
   qrDecompose,
 } from '../../util/misc/matrix';
@@ -232,19 +233,30 @@ export class InteractiveFabricObject<
    * @return {Record<string, TOCoord>}
    */
   calcOCoords(): Record<string, TOCoord> {
-    const { dimensions, transform } = this.getCoordsCalculationContext({
-      applyViewportTransform: true,
-      applyPadding: true,
-    });
-    const coords: Record<string, TOCoord> = {};
+    const vpt = this.getViewportTransform(),
+      center = this.getCenterPoint(),
+      tMatrix = [1, 0, 0, 1, center.x, center.y] as TMat2D,
+      rMatrix = createRotateMatrix({
+        angle: this.getTotalAngle() - (!!this.group && this.flipX ? 180 : 0),
+      }),
+      positionMatrix = multiplyTransformMatrices(tMatrix, rMatrix),
+      startMatrix = multiplyTransformMatrices(vpt, positionMatrix),
+      finalMatrix = multiplyTransformMatrices(startMatrix, [
+        1 / vpt[0],
+        0,
+        0,
+        1 / vpt[3],
+        0,
+        0,
+      ]),
+      transformOptions = this.group
+        ? qrDecompose(this.calcTransformMatrix())
+        : undefined,
+      dim = this._calculateCurrentDimensions(transformOptions),
+      coords: Record<string, TOCoord> = {};
 
     this.forEachControl((control, key) => {
-      const position = control.positionHandler(
-        dimensions,
-        transform,
-        this,
-        control
-      );
+      const position = control.positionHandler(dim, finalMatrix, this, control);
       // coords[key] are sometimes used as points. Those are points to which we add
       // the property corner and touchCorner from `_calcCornerCoords`.
       // don't remove this assign for an object spread.

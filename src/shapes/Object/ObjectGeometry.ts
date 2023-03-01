@@ -15,11 +15,8 @@ import {
   composeMatrix,
   invertTransform,
   multiplyTransformMatrices,
-  qrDecompose,
-  TComposeMatrixArgs,
   transformPoint,
   calcPlaneRotation,
-  multiplyTransformMatrixArray,
 } from '../../util/misc/matrix';
 import { radiansToDegrees } from '../../util/misc/radiansDegreesConversion';
 import type { Canvas } from '../../canvas/Canvas';
@@ -407,58 +404,31 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     return this.canvas?.viewportTransform || (iMatrix.concat() as TMat2D);
   }
 
-  protected getCoordsCalculationContext({
-    applyViewportTransform = false,
-    applyPadding = false,
-  }: {
-    applyViewportTransform?: boolean;
-    applyPadding?: boolean;
-  } = {}) {
-    const vpt = applyViewportTransform ? this.getViewportTransform() : iMatrix;
-    const center = this.getCenterPoint();
-    const transformOptions = this.group
-      ? qrDecompose(this.calcTransformMatrix())
-      : ({
-          scaleX: this.scaleX,
-          scaleY: this.scaleY,
-          skewX: this.skewX,
-          skewY: this.skewY,
-          angle: this.angle,
-          translateX: this.left,
-          translateY: this.top,
-        } as Required<Omit<TComposeMatrixArgs, 'flipX' | 'flipY'>>);
-
-    return {
-      dimensions: this._getTransformedDimensions(transformOptions)
-        .transform(vpt, true)
-        .scalarAdd(applyPadding ? 2 * this.padding : 0),
-      transform: multiplyTransformMatrixArray([
-        vpt,
-        [1, 0, 0, 1, center.x, center.y],
-        createRotateMatrix({
-          angle:
-            transformOptions.angle -
-            // this is nonsense
-            (!!this.group && this.flipX ? 180 : 0),
-        }),
-        [1 / vpt[0], 0, 0, 1 / vpt[3], 0, 0],
-      ]),
-      options: transformOptions,
-    };
-  }
-
   /**
    * Calculates the coordinates of the 4 corner of the bbox, in absolute coordinates.
    * those never change with zoom or viewport changes.
    * @return {TCornerPoint}
    */
   calcACoords(): TCornerPoint {
-    const { dimensions, transform } = this.getCoordsCalculationContext();
+    const rotateMatrix = createRotateMatrix({ angle: this.angle }),
+      center = this.getRelativeCenterPoint(),
+      translateMatrix = [1, 0, 0, 1, center.x, center.y] as TMat2D,
+      positionMatrix = multiplyTransformMatrices(translateMatrix, rotateMatrix),
+      finalMatrix = this.group
+        ? multiplyTransformMatrices(
+            this.group.calcTransformMatrix(),
+            positionMatrix
+          )
+        : positionMatrix,
+      dim = this._getTransformedDimensions(),
+      w = dim.x / 2,
+      h = dim.y / 2;
     return {
-      tl: dimensions.multiply(new Point(-0.5, -0.5)).transform(transform),
-      tr: dimensions.multiply(new Point(0.5, -0.5)).transform(transform),
-      bl: dimensions.multiply(new Point(-0.5, 0.5)).transform(transform),
-      br: dimensions.multiply(new Point(0.5, 0.5)).transform(transform),
+      // corners
+      tl: transformPoint({ x: -w, y: -h }, finalMatrix),
+      tr: transformPoint({ x: w, y: -h }, finalMatrix),
+      bl: transformPoint({ x: -w, y: h }, finalMatrix),
+      br: transformPoint({ x: w, y: h }, finalMatrix),
     };
   }
 
