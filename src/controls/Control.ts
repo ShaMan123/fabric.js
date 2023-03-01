@@ -294,7 +294,12 @@ export class Control {
     fabricObject: InteractiveFabricObject,
     currentControl: Control
   ) {
-    return new Point(this.x, this.y).transform(finalMatrix);
+    return new Point(this.x, this.y)
+      .transform(finalMatrix)
+      .add(new Point(this.offsetX, this.offsetY));
+    return new Point(this.x, this.y)
+      .multiply(dim)
+      .add(fabricObject.getCenterPoint());
     // .add(new Point(this.offsetX, this.offsetY).transform(finalMatrix2, true));
   }
 
