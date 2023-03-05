@@ -18,14 +18,9 @@ import type { TFabricObjectProps, SerializedObjectProps } from './types';
 import { createObjectDefaultControls } from '../../controls/commonControls';
 import { interactiveObjectDefaultValues } from './defaultValues';
 import { mapValues } from '../../util/internals';
-import {
-  createVector,
-  getOrthonormalVector,
-  rotateVector,
-} from '../../util/misc/vectors';
+import { createVector } from '../../util/misc/vectors';
 import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 import { Intersection } from '../../Intersection';
-import { capValue } from '../../util/misc/capValue';
 
 export type TOCoord = Point & {
   corner: TCornerPoint;
