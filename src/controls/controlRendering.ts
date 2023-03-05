@@ -1,8 +1,5 @@
 import { twoMathPi } from '../constants';
-import type {
-  InteractiveFabricObject,
-  TControlCoord,
-} from '../shapes/Object/InteractiveObject';
+import type { InteractiveFabricObject } from '../shapes/Object/InteractiveObject';
 import { calcPlaneRotation } from '../util/misc/matrix';
 import type { FabricObject } from '../shapes/Object/FabricObject';
 import type { Control } from './Control';
@@ -23,7 +20,8 @@ export type ControlRenderingStyleOverride = Partial<
 
 export type ControlRenderer = (
   ctx: CanvasRenderingContext2D,
-  position: TControlCoord,
+  x: number,
+  y: number,
   styleOverride: ControlRenderingStyleOverride,
   fabricObject: InteractiveFabricObject
 ) => void;
@@ -34,14 +32,16 @@ export type ControlRenderer = (
  * cornerColor, cornerStrokeColor
  * plus the addition of offsetY and offsetX.
  * @param {CanvasRenderingContext2D} ctx context to render on
- * @param {TControlCoord} position coordinate where the control center should be
+ * @param {number} x control center x
+ * @param {number} y control center y
  * @param {Object} styleOverride override for FabricObject controls style
  * @param {FabricObject} fabricObject the fabric object for which we are rendering controls
  */
 export function renderCircleControl(
   this: Control,
   ctx: CanvasRenderingContext2D,
-  { position: { x, y } }: TControlCoord,
+  x: number,
+  y: number,
   styleOverride: ControlRenderingStyleOverride,
   fabricObject: InteractiveFabricObject
 ) {
@@ -91,14 +91,16 @@ export function renderCircleControl(
  * cornerColor, cornerStrokeColor
  * plus the addition of offsetY and offsetX.
  * @param {CanvasRenderingContext2D} ctx context to render on
- * @param {TControlCoord} position coordinate where the control center should be
+ * @param {number} x control center x
+ * @param {number} y control center y
  * @param {Object} styleOverride override for FabricObject controls style
  * @param {FabricObject} fabricObject the fabric object for which we are rendering controls
  */
 export function renderSquareControl(
   this: Control,
   ctx: CanvasRenderingContext2D,
-  { position: { x, y } }: TControlCoord,
+  x: number,
+  y: number,
   styleOverride: ControlRenderingStyleOverride,
   fabricObject: InteractiveFabricObject
 ) {

@@ -14,9 +14,9 @@ import { BBox } from '../../BBox/BBox';
 
 export type TControlCoord = {
   position: Point;
+  connection: { from: Point; to: Point };
   corner: TCornerPoint;
   touchCorner: TCornerPoint;
-  connection: Point;
 };
 
 export type TControlSet = Record<string, Control>;
@@ -236,6 +236,7 @@ export class InteractiveFabricObject<
       const t = legacyBBox.getTransformation();
       const position = control.positionHandler(v, t, t, this, control);
       const connectionPosition = control.connectionPositionHandler(
+        position,
         v,
         t,
         this,
@@ -437,7 +438,7 @@ export class InteractiveFabricObject<
     const coords = this.getControlCoords();
     this.forEachControl((control, key) => {
       if (control.getVisibility(this, key)) {
-        control.render(ctx, coords[key], options, this);
+        control.renderControl(ctx, coords[key], options, this);
       }
     });
     ctx.restore();
