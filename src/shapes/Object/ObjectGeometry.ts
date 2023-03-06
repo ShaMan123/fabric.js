@@ -462,9 +462,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
       ? this.getCenterPoint().transform(vpt)
       : this.getCenterPoint();
     return realCenter
-      .add(
-        this.calcDimensionsVector(origin, { origin, applyViewportTransform })
-      )
+      .add(this.calcDimensionsVector(origin, { applyViewportTransform }))
       .add(offsetVector);
   }
 
