@@ -63,7 +63,7 @@ describe('InteractiveObject', () => {
     expect(object.getActiveControl()).toEqual({
       key: 'control',
       control,
-      coord: object['oCoords']!.control,
+      coord: object['controlCoords']!.control,
     });
   });
 });

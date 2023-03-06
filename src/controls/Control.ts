@@ -297,6 +297,11 @@ export class Control {
     fabricObject: InteractiveFabricObject,
     currentControl: Control
   ) {
+    return new Point(this.x, this.y)
+      .multiply(dim)
+      .add(new Point(this.offsetX, this.offsetY))
+      .transform(finalMatrix);
+
     const position = new Point(this.x, this.y)
       .multiply(dim)
       .transform(finalMatrix);
@@ -305,6 +310,7 @@ export class Control {
       degreesToRadians(fabricObject.getTotalAngle())
     );
     return position.add(offset);
+
     return (
       new Point(this.x, this.y)
         .transform(finalMatrix)

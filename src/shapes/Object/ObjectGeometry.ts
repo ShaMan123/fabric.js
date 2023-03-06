@@ -25,6 +25,7 @@ import type { ObjectEvents } from '../../EventTypeDefs';
 import type { ControlProps } from './types/ControlProps';
 import { mapValues } from '../../util/internals';
 import { getUnitVector, rotateVector } from '../../util/misc/vectors';
+import { sendVectorToPlane } from '../../util/misc/planeChange';
 
 type TMatrixCache = {
   key: string;
@@ -45,7 +46,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * The coordinates get updated with {@link setCoords}.
    * You can calculate them without updating with {@link calcACoords()}
    */
-  protected declare aCoords?: TCornerPoint;
+  protected declare cornerCoords?: TCornerPoint;
 
   /**
    * storage cache for object transform matrix
@@ -188,7 +189,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    */
   getCoords(): Point[] {
     const { tl, tr, br, bl } =
-      this.aCoords || (this.aCoords = this.calcACoords());
+      this.cornerCoords || (this.cornerCoords = this.calcACoords());
     const coords = [tl, tr, br, bl];
     if (this.group) {
       const t = this.group.calcTransformMatrix();
@@ -403,12 +404,18 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     return this.canvas?.viewportTransform || (iMatrix.concat() as TMat2D);
   }
 
+  protected needsViewportCoords() {
+    return this.strokeUniform || !this.padding;
+  }
+
   protected calcDimensionsVector(
     origin = new Point(1, 1),
     // @TODO pass t instead
     {
-      applyViewportTransform = false,
+      // origin = new Point(1, 1),
+      applyViewportTransform = this.needsViewportCoords(),
     }: {
+      // origin?: Point;
       applyViewportTransform?: boolean;
     } = {}
   ) {
@@ -433,11 +440,12 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
 
   protected calcCoord(
     origin: Point,
-    offset = new Point(),
     {
-      applyViewportTransform = false,
+      offset = new Point(),
+      applyViewportTransform = this.needsViewportCoords(),
       padding = 0,
     }: {
+      offset?: Point;
       applyViewportTransform?: boolean;
       padding?: number;
     } = {}
@@ -454,34 +462,36 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
       ? this.getCenterPoint().transform(vpt)
       : this.getCenterPoint();
     return realCenter
-      .add(this.calcDimensionsVector(origin, { applyViewportTransform }))
+      .add(
+        this.calcDimensionsVector(origin, { origin, applyViewportTransform })
+      )
       .add(offsetVector);
   }
 
   /**
-   * **CAUTION**
-   * can be used only after aCoords are set
-   * @param origin
-   * @param offset
-   * @returns
-   */
-  protected calcViewportCoord(
-    origin: Point,
-    offset: Point,
-    padding = this.padding
-  ) {
-    return this.calcCoord(origin, offset, {
-      applyViewportTransform: true,
-      padding,
-    });
-  }
-
-  /**
-   * Calculates the coordinates of the 4 corner of the bbox, in absolute coordinates.
-   * those never change with zoom or viewport changes.
+   * Calculates the coordinates of the 4 corner of the bbox
    * @return {TCornerPoint}
    */
-  calcACoords(): TCornerPoint {
+  calcCoords(): TCornerPoint {
+    // const size = new Point(this.width, this.height);
+    // return projectStrokeOnPoints(
+    //   [
+    //     new Point(-0.5, -0.5),
+    //     new Point(0.5, -0.5),
+    //     new Point(-0.5, 0.5),
+    //     new Point(0.5, 0.5),
+    //   ].map((origin) => origin.multiply(size)),
+    //   {
+    //     ...this,
+    //     ...qrDecompose(
+    //       multiplyTransformMatrices(
+    //         this.needsViewportCoords() ? this.getViewportTransform() : iMatrix,
+    //         this.calcTransformMatrix()
+    //       )
+    //     ),
+    //   }
+    // );
+
     return mapValues(
       {
         tl: new Point(-0.5, -0.5),
@@ -495,16 +505,16 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
 
   /**
    * Sets corner and controls position coordinates based on current angle, width and height, left and top.
-   * {@link aCoords} are used to quickly find an object on the canvas.
+   * {@link cornerCoords} are used to quickly find an object on the canvas.
    *
    * Calling this method is probably redundant, consider calling {@link invalidateCoords} instead.
    */
   setCoords(): void {
-    this.aCoords = this.calcACoords();
+    this.cornerCoords = this.calcCoords();
   }
 
   invalidateCoords() {
-    delete this.aCoords;
+    delete this.cornerCoords;
   }
 
   transformMatrixKey(skipGroup = false): string {
@@ -606,6 +616,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
 
   /**
    * Calculate object dimensions from its properties
+   * @deprecated
    * @private
    * @returns {Point} dimensions
    */
@@ -614,8 +625,34 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   }
 
   /**
+   * Calculate object bounding box dimensions from its properties scale, skew.
+   * @deprecated
+   * @param {Object} [options]
+   * @param {Number} [options.scaleX]
+   * @param {Number} [options.scaleY]
+   * @param {Number} [options.skewX]
+   * @param {Number} [options.skewY]
+   * @private
+   * @returns {Point} dimensions
+   */
+  _getTransformedDimensions1(options: any = {}): Point {
+    return sendVectorToPlane(
+      this.calcDimensionsVector(/*new Point(options.width||)*/),
+      this.group?.calcTransformMatrix(),
+      composeMatrix({
+        scaleX: this.scaleX,
+        scaleY: this.scaleY,
+        skewX: this.skewX,
+        skewY: this.skewY,
+        ...options,
+      })
+    );
+  }
+
+  /**
    * Calculate object dimensions for controls box, including padding and canvas zoom.
    * and active selection
+   * @deprecated
    * @private
    * @param {object} [options] transform options
    * @returns {Point} dimensions

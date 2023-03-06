@@ -93,7 +93,7 @@ export class InteractiveFabricObject<
    * `corner/touchCorner` describe the 4 points forming the interactive area of the corner.
    * Used to draw and locate controls.
    */
-  protected declare oCoords?: Record<string, TOCoord>;
+  protected declare controlCoords?: Record<string, TOCoord>;
 
   /**
    * keeps the value of the last hovered corner during mouse move.
@@ -170,7 +170,7 @@ export class InteractiveFabricObject<
   }
 
   getControlCoords() {
-    return this.oCoords || (this.oCoords = this.calcOCoords());
+    return this.controlCoords || (this.controlCoords = this.calcOCoords());
   }
 
   getActiveControl() {
@@ -205,23 +205,20 @@ export class InteractiveFabricObject<
 
     this.__corner = undefined;
     const coords = this.getControlCoords();
-    const cornerEntries = Object.entries(coords);
-    for (let i = cornerEntries.length - 1; i >= 0; i--) {
-      const [key, corner] = cornerEntries[i];
+    for (const [key, coord] of Object.entries(coords)) {
       const control = this.controls[key];
-
       if (
         control.shouldActivate(
           key,
           this,
           pointer,
-          forTouch ? corner.touchCorner : corner.corner
+          forTouch ? coord.touchCorner : coord.corner
         )
       ) {
         // this.canvas.contextTop.fillRect(pointer.x - 1, pointer.y - 1, 2, 2);
         this.__corner = key;
 
-        return { key, control, coord: coords[key] };
+        return { key, control, coord };
       }
     }
 
@@ -308,7 +305,7 @@ export class InteractiveFabricObject<
         new Point(width, height),
         // [width, 0, 0, height, center.x, center.y],
         t3,
-        t,
+        // t,
         this,
         control
       );
@@ -371,12 +368,12 @@ export class InteractiveFabricObject<
    */
   setCoords(): void {
     super.setCoords();
-    this.canvas && (this.oCoords = this.calcOCoords());
+    this.canvas && (this.controlCoords = this.calcOCoords());
   }
 
   invalidateCoords() {
     super.invalidateCoords();
-    delete this.oCoords;
+    delete this.controlCoords;
   }
 
   /**

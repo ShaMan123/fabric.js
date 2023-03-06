@@ -21,7 +21,12 @@ type TTransformAnchor = Transform & { pointIndex: number };
  * It'll be used both for drawing and for interaction.
  */
 export const createPolyPositionHandler = (pointIndex: number) => {
-  return function (dim: Point, finalMatrix: TMat2D, polyObject: Polyline) {
+  return function (
+    dim: Point,
+    finalMatrix: TMat2D,
+    finalMatrix2: TMat2D,
+    polyObject: Polyline
+  ) {
     const { points, pathOffset } = polyObject;
     return new Point(points[pointIndex])
       .subtract(pathOffset)
