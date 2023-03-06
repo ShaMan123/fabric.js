@@ -254,6 +254,12 @@ export const createSkewYMatrix = (skewValue: TDegree): TMat2D => [
   0,
 ];
 
+export const calcShearMatrix = (skewX: TDegree, skewY: TDegree) =>
+  multiplyTransformMatrices(
+    [1, 0, Math.tan(degreesToRadians(skewX)), 1, 0, 0],
+    [1, Math.tan(degreesToRadians(skewY)), 0, 1, 0, 0]
+  );
+
 /**
  * Returns a transform matrix starting from an object of the same kind of
  * the one returned from qrDecompose, useful also if you want to calculate some
