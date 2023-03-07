@@ -58,7 +58,7 @@ export const geometryProperties = [
   'strokeLineCap',
   'strokeLineJoin',
   'strokeMiterLimit',
-  // this doesn't affect cornerCoords but due to laziness it will invalidate all coords
+  // this doesn't affect bboxCoords but due to laziness it will invalidate all coords
   'padding',
 ];
 

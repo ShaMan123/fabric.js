@@ -25,7 +25,10 @@ import type { ObjectEvents } from '../../EventTypeDefs';
 import type { ControlProps } from './types/ControlProps';
 import { mapValues } from '../../util/internals';
 import { getUnitVector, rotateVector } from '../../util/misc/vectors';
-import { sendVectorToPlane } from '../../util/misc/planeChange';
+import {
+  calcPlaneChangeMatrix,
+  sendVectorToPlane,
+} from '../../util/misc/planeChange';
 
 type TMatrixCache = {
   key: string;
@@ -38,15 +41,8 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
 {
   declare padding: number;
 
-  /**
-   * Describe object's corner position in scene coordinates.
-   * The coordinates are derived from the following:
-   * left, top, width, height, scaleX, scaleY, skewX, skewY, angle, strokeWidth.
-   * The coordinates do not depend on viewport changes.
-   * The coordinates get updated with {@link setCoords}.
-   * You can calculate them without updating with {@link calcACoords()}
-   */
-  protected declare cornerCoords?: TCornerPoint;
+  declare bboxCoords?: TCornerPoint;
+  declare bbox?: TBBox;
 
   /**
    * storage cache for object transform matrix
@@ -188,14 +184,12 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * @return {Point[]} [tl, tr, br, bl] in the scene plane
    */
   getCoords(): Point[] {
-    const { tl, tr, br, bl } =
-      this.cornerCoords || (this.cornerCoords = this.calcACoords());
-    const coords = [tl, tr, br, bl];
-    if (this.group) {
-      const t = this.group.calcTransformMatrix();
-      return coords.map((p) => p.transform(t));
+    if (!this.bboxCoords) {
+      this.bboxCoords = this.calcCoords();
     }
-    return coords;
+    // @TODO: merge error
+    const t = calcPlaneChangeMatrix(this.group?.calcTransformMatrix());
+    return Object.values(this.bboxCoords).map((coord) => coord.transform(t));
   }
 
   /**
@@ -501,16 +495,32 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
 
   /**
    * Sets corner and controls position coordinates based on current angle, width and height, left and top.
-   * {@link cornerCoords} are used to quickly find an object on the canvas.
    *
    * Calling this method is probably redundant, consider calling {@link invalidateCoords} instead.
    */
   setCoords(): void {
-    this.cornerCoords = this.calcCoords();
+    this.bboxCoords = this.calcCoords();
+    this.bbox = makeBoundingBoxFromPoints(Object.values(this.bboxCoords));
+    // debug code
+    setTimeout(() => {
+      const canvas = this.canvas;
+      if (!canvas) return;
+      const ctx = canvas.contextTop;
+      canvas.clearContext(ctx);
+      ctx.fillStyle = 'blue';
+      Object.keys(this.bboxCoords).forEach((key) => {
+        const control = this.bboxCoords[key];
+        ctx.beginPath();
+        ctx.ellipse(control.x, control.y, 6, 6, 0, 0, 360);
+        ctx.closePath();
+        ctx.fill();
+      });
+    }, 50);
   }
 
   invalidateCoords() {
-    delete this.cornerCoords;
+    delete this.bboxCoords;
+    delete this.bbox;
   }
 
   transformMatrixKey(skipGroup = false): string {

@@ -222,7 +222,7 @@
 
     cObj.set('left', 250).set('top', 250);
 
-    assert.equal(cObj.cornerCoords, undefined);
+    assert.equal(cObj.bboxCoords, undefined);
     assert.equal(cObj.oCoords, undefined);
 
     // recalculate coords
@@ -256,7 +256,7 @@
     assert.equal(cObj.oCoords.mtr.y, 185, 'setCoords mtr.y padding');
   });
 
-  QUnit.test('setCoords and cornerCoords', function(assert) {
+  QUnit.test('setCoords and bboxCoords', function(assert) {
     var cObj = new fabric.Object({ left: 150, top: 150, width: 100, height: 100, strokeWidth: 0});
     cObj.canvas = {
       viewportTransform: [2, 0, 0, 2, 0, 0]
@@ -274,14 +274,14 @@
     assert.equal(cObj.oCoords.mtr.x, 400, 'oCoords are modified by viewportTransform mtr.x');
     assert.equal(cObj.oCoords.mtr.y, 260, 'oCoords are modified by viewportTransform mtr.y');
 
-    assert.equal(cObj.cornerCoords.tl.x, 150, 'cornerCoords do not interfere with viewportTransform');
-    assert.equal(cObj.cornerCoords.tl.y, 150, 'cornerCoords do not interfere with viewportTransform');
-    assert.equal(cObj.cornerCoords.tr.x, 250, 'cornerCoords do not interfere with viewportTransform');
-    assert.equal(cObj.cornerCoords.tr.y, 150, 'cornerCoords do not interfere with viewportTransform');
-    assert.equal(cObj.cornerCoords.bl.x, 150, 'cornerCoords do not interfere with viewportTransform');
-    assert.equal(cObj.cornerCoords.bl.y, 250, 'cornerCoords do not interfere with viewportTransform');
-    assert.equal(cObj.cornerCoords.br.x, 250, 'cornerCoords do not interfere with viewportTransform');
-    assert.equal(cObj.cornerCoords.br.y, 250, 'cornerCoords do not interfere with viewportTransform');
+    assert.equal(cObj.bboxCoords.tl.x, 150, 'bboxCoords do not interfere with viewportTransform');
+    assert.equal(cObj.bboxCoords.tl.y, 150, 'bboxCoords do not interfere with viewportTransform');
+    assert.equal(cObj.bboxCoords.tr.x, 250, 'bboxCoords do not interfere with viewportTransform');
+    assert.equal(cObj.bboxCoords.tr.y, 150, 'bboxCoords do not interfere with viewportTransform');
+    assert.equal(cObj.bboxCoords.bl.x, 150, 'bboxCoords do not interfere with viewportTransform');
+    assert.equal(cObj.bboxCoords.bl.y, 250, 'bboxCoords do not interfere with viewportTransform');
+    assert.equal(cObj.bboxCoords.br.x, 250, 'bboxCoords do not interfere with viewportTransform');
+    assert.equal(cObj.bboxCoords.br.y, 250, 'bboxCoords do not interfere with viewportTransform');
   });
 
   QUnit.test('isOnScreen', function(assert) {
@@ -601,10 +601,10 @@
 
     cObj.left += 5;
     coords = cObj.getCoords();
-    assert.deepEqual(coords[0], new fabric.Point(40, 30), 'return top left corner cached cornerCoords');
-    assert.deepEqual(coords[1], new fabric.Point(52, 30), 'return top right corner cached cornerCoords');
-    assert.deepEqual(coords[2], new fabric.Point(52, 47), 'return bottom right corner cached cornerCoords');
-    assert.deepEqual(coords[3], new fabric.Point(40, 47), 'return bottom left corner cached cornerCoords');
+    assert.deepEqual(coords[0], new fabric.Point(40, 30), 'return top left corner cached bboxCoords');
+    assert.deepEqual(coords[1], new fabric.Point(52, 30), 'return top right corner cached bboxCoords');
+    assert.deepEqual(coords[2], new fabric.Point(52, 47), 'return bottom right corner cached bboxCoords');
+    assert.deepEqual(coords[3], new fabric.Point(40, 47), 'return bottom left corner cached bboxCoords');
 
     cObj.invalidateCoords();
     coords = cObj.getCoords();

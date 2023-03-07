@@ -403,10 +403,10 @@
     canvas.setZoom(2);
     canvas.add(cObj);
     var originaloCoords = cObj.oCoords;
-    var originalaCoords = cObj.cornerCoords;
+    var originalaCoords = cObj.bboxCoords;
     cObj.toCanvasElement();
     assert.deepEqual(cObj.oCoords, originaloCoords, 'cObj did not get object coords changed');
-    assert.deepEqual(cObj.cornerCoords, originalaCoords, 'cObj did not get absolute coords changed');
+    assert.deepEqual(cObj.bboxCoords, originalaCoords, 'cObj did not get absolute coords changed');
   });
 
 
