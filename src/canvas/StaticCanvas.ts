@@ -515,13 +515,11 @@ export class StaticCanvas<
    * helps to determinate when an object is in the current rendering viewport
    */
   calcViewportBoundaries(): TCornerPoint {
-    const width = this.width,
-      height = this.height,
-      iVpt = invertTransform(this.viewportTransform),
-      a = transformPoint({ x: 0, y: 0 }, iVpt),
-      b = transformPoint({ x: width, y: height }, iVpt),
-      // we don't support vpt flipping
-      // but the code is robust enough to mostly work with flipping
+    // we don't support vpt flipping
+    // but the code is robust enough to mostly work with flipping
+    const iVpt = invertTransform(this.viewportTransform),
+      a = new Point().transform(iVpt),
+      b = new Point(this.width, this.height).transform(iVpt),
       min = a.min(b),
       max = a.max(b);
     return (this.vptCoords = {
@@ -621,9 +619,11 @@ export class StaticCanvas<
    * @param {Array} objects to render
    */
   _renderObjects(ctx: CanvasRenderingContext2D, objects: FabricObject[]) {
-    for (let i = 0, len = objects.length; i < len; ++i) {
-      objects[i] && objects[i].render(ctx);
-    }
+    objects.forEach((object) => {
+      object &&
+        (!this.skipOffscreen || !object.skipOffscreen || object.isOnScreen()) &&
+        object.render(ctx);
+    });
   }
 
   /**

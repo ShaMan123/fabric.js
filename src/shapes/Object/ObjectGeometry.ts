@@ -61,6 +61,8 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    */
   declare canvas?: StaticCanvas | Canvas;
 
+  skipOffscreen = true;
+
   /**
    * @returns {number} x position according to object's {@link originX} property in canvas coordinate plane
    */
@@ -255,6 +257,8 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   containsPoint(point: Point): boolean {
     return Intersection.isPointInPolygon(point, this.getCoords());
   }
+
+  isVisibleInParent() {}
 
   /**
    * Checks if object is contained within the canvas with current viewportTransform
