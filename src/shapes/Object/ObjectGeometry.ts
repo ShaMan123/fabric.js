@@ -1,4 +1,5 @@
 import type {
+  TAxis,
   TBBox,
   TCornerPoint,
   TDegree,
@@ -9,7 +10,6 @@ import type {
 import { iMatrix } from '../../constants';
 import { Intersection } from '../../Intersection';
 import { Point } from '../../Point';
-import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 import {
   composeMatrix,
   invertTransform,
@@ -25,11 +25,9 @@ import type { ObjectEvents } from '../../EventTypeDefs';
 import type { ControlProps } from './types/ControlProps';
 import { mapValues } from '../../util/internals';
 import { getUnitVector, rotateVector } from '../../util/misc/vectors';
-import {
-  calcPlaneChangeMatrix,
-  sendVectorToPlane,
-} from '../../util/misc/planeChange';
+import { sendVectorToPlane } from '../../util/misc/planeChange';
 import { BBox } from './BBox';
+import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 
 type TMatrixCache = {
   key: string;
@@ -185,12 +183,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * @return {Point[]} [tl, tr, br, bl] in the scene plane
    */
   getCoords(): Point[] {
-    if (!this.bboxCoords) {
-      this.bboxCoords = this.calcCoords();
-    }
-    // @TODO: merge error
-    const t = calcPlaneChangeMatrix(this.group?.calcTransformMatrix());
-    return Object.values(this.bboxCoords).map((coord) => coord.transform(t));
+    return (this.bbox || (this.bbox = BBox.rotated(this))).getCoords(false);
   }
 
   /**
@@ -330,7 +323,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * @return {Number} width value
    */
   getScaledWidth(): number {
-    return this._getTransformedDimensions().x;
+    return BBox.transformed(this).getDimensionsVector(false).x;
   }
 
   /**
@@ -339,7 +332,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * @return {Number} height value
    */
   getScaledHeight(): number {
-    return this._getTransformedDimensions().y;
+    return BBox.transformed(this).getDimensionsVector(false).y;
   }
 
   /**
@@ -353,28 +346,14 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     this.invalidateCoords();
   }
 
-  /**
-   * Scales an object to a given width, with respect to bounding box (scaling by x/y equally)
-   * @param {Number} value New width value
-   * @return {void}
-   */
-  scaleToWidth(value: number) {
+  scaleAxisTo(axis: TAxis, value: number, inViewport: boolean) {
     // adjust to bounding rect factor so that rotated shapes would fit as well
-    const boundingRectFactor =
-      this.getBoundingRect().width / this.getScaledWidth();
-    return this.scale(value / this.width / boundingRectFactor);
-  }
-
-  /**
-   * Scales an object to a given height, with respect to bounding box (scaling by x/y equally)
-   * @param {Number} value New height value
-   * @return {void}
-   */
-  scaleToHeight(value: number) {
-    // adjust to bounding rect factor so that rotated shapes would fit as well
-    const boundingRectFactor =
-      this.getBoundingRect().height / this.getScaledHeight();
-    return this.scale(value / this.height / boundingRectFactor);
+    const transformed = BBox.transformed(this).getDimensionsVector(false);
+    const rotated = (
+      this.bbox || (this.bbox = BBox.rotated(this))
+    ).getDimensionsVector(inViewport);
+    const boundingRectFactor = rotated[axis] / transformed[axis];
+    this.scale(value / this.width / boundingRectFactor);
   }
 
   getCanvasRetinaScaling() {
@@ -522,11 +501,11 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
         new Point(-0.5, 0.5),
         new Point(0.5, 0.5),
       ].forEach((origin) => {
-        draw(BBox.inViewport(this).applyToPointInViewport(origin), 'red', 10);
+        draw(BBox.canvas(this).applyToPointInViewport(origin), 'red', 10);
         draw(BBox.rotated(this).applyToPointInViewport(origin), 'magenta', 8);
         draw(BBox.transformed(this).applyToPointInViewport(origin), 'blue', 6);
         ctx.transform(...this.getViewportTransform());
-        draw(BBox.inViewport(this).applyToPointInCanvas(origin), 'red', 10);
+        draw(BBox.canvas(this).applyToPointInCanvas(origin), 'red', 10);
         draw(BBox.rotated(this).applyToPointInCanvas(origin), 'magenta', 8);
         draw(BBox.transformed(this).applyToPointInCanvas(origin), 'blue', 6);
       });
