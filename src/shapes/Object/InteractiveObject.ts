@@ -191,7 +191,7 @@ export class InteractiveFabricObject<
    * @private
    * @param {Object} pointer The pointer indicating the mouse position
    * @param {boolean} forTouch indicates if we are looking for interaction area with a touch action
-   * @return {String|Boolean} corner code (tl, tr, bl, br, etc.), or 0 if nothing is found.
+   * @return {String} corner code (tl, tr, bl, br, etc.), or an empty string if nothing is found.
    */
   findControl(
     pointer: Point,
@@ -206,6 +206,10 @@ export class InteractiveFabricObject<
     for (const [key, coord] of Object.entries(coords)) {
       const control = this.controls[key];
       if (
+        //  BBox.build(forTouch ? corner.touchCorner : corner.corner).containsPoint(
+        //   pointer,
+        //   true
+        // )
         control.shouldActivate(
           key,
           this,
