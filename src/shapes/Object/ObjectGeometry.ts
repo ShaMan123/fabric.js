@@ -29,6 +29,7 @@ import {
   calcPlaneChangeMatrix,
   sendVectorToPlane,
 } from '../../util/misc/planeChange';
+import { BBox } from './BBox';
 
 type TMatrixCache = {
   key: string;
@@ -42,7 +43,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   declare padding: number;
 
   declare bboxCoords?: TCornerPoint;
-  declare bbox?: TBBox;
+  declare bbox?: BBox;
 
   /**
    * storage cache for object transform matrix
@@ -500,21 +501,36 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    */
   setCoords(): void {
     this.bboxCoords = this.calcCoords();
-    this.bbox = makeBoundingBoxFromPoints(Object.values(this.bboxCoords));
+    this.bbox = BBox.rotated(this);
     // debug code
     setTimeout(() => {
       const canvas = this.canvas;
       if (!canvas) return;
       const ctx = canvas.contextTop;
       canvas.clearContext(ctx);
-      ctx.fillStyle = 'blue';
-      Object.keys(this.bboxCoords).forEach((key) => {
-        const control = this.bboxCoords[key];
+      ctx.save();
+      const draw = (point: Point, color: string, radius = 6) => {
+        ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.ellipse(control.x, control.y, 6, 6, 0, 0, 360);
+        ctx.ellipse(point.x, point.y, radius, radius, 0, 0, 360);
         ctx.closePath();
         ctx.fill();
+      };
+      [
+        new Point(-0.5, -0.5),
+        new Point(0.5, -0.5),
+        new Point(-0.5, 0.5),
+        new Point(0.5, 0.5),
+      ].forEach((origin) => {
+        draw(BBox.inViewport(this).applyToPointInViewport(origin), 'red');
+        draw(BBox.rotated(this).applyToPointInViewport(origin), 'magenta');
+        draw(BBox.transformed(this).applyToPointInViewport(origin), 'blue');
+        ctx.transform(...this.getViewportTransform());
+        draw(BBox.inViewport(this).applyToPointInCanvas(origin), 'red');
+        draw(BBox.rotated(this).applyToPointInCanvas(origin), 'magenta');
+        draw(BBox.transformed(this).applyToPointInCanvas(origin), 'blue');
       });
+      ctx.restore();
     }, 50);
   }
 
