@@ -3,7 +3,7 @@ import { Control } from '../../controls/Control';
 import { radiansToDegrees } from '../../util';
 import { Group } from '../Group';
 import { FabricObject } from './FabricObject';
-import { InteractiveFabricObject, type TOCoord } from './InteractiveObject';
+import { InteractiveFabricObject } from './InteractiveObject';
 
 describe('InteractiveObject', () => {
   it('tests constructor & properties', () => {
@@ -37,19 +37,17 @@ describe('InteractiveObject', () => {
       canvas.add(group);
       const objectAngle = Math.round(object.getTotalAngle());
       expect(objectAngle).toEqual(35);
-      Object.values(object.getControlCoords()).forEach(
-        (cornerPoint: TOCoord) => {
-          const controlAngle = Math.round(
-            radiansToDegrees(
-              Math.atan2(
-                cornerPoint.corner.tr.y - cornerPoint.corner.tl.y,
-                cornerPoint.corner.tr.x - cornerPoint.corner.tl.x
-              )
+      Object.values(object.getControlCoords()).forEach((cornerPoint) => {
+        const controlAngle = Math.round(
+          radiansToDegrees(
+            Math.atan2(
+              cornerPoint.corner.tr.y - cornerPoint.corner.tl.y,
+              cornerPoint.corner.tr.x - cornerPoint.corner.tl.x
             )
-          );
-          expect(controlAngle).toEqual(objectAngle);
-        }
-      );
+          )
+        );
+        expect(controlAngle).toEqual(objectAngle);
+      });
     });
   });
 

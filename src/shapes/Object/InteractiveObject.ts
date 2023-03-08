@@ -20,7 +20,8 @@ import { interactiveObjectDefaultValues } from './defaultValues';
 import { mapValues } from '../../util/internals';
 import { BBox } from './BBox';
 
-export type TOCoord = Point & {
+type TControlCoord = {
+  position: Point;
   corner: TCornerPoint;
   touchCorner: TCornerPoint;
 };
@@ -91,7 +92,7 @@ export class InteractiveFabricObject<
    * `corner/touchCorner` describe the 4 points forming the interactive area of the corner.
    * Used to draw and locate controls.
    */
-  protected declare controlCoords?: Record<string, TOCoord>;
+  protected declare controlCoords?: Record<string, TControlCoord>;
 
   /**
    * keeps the value of the last hovered corner during mouse move.
@@ -168,7 +169,9 @@ export class InteractiveFabricObject<
   }
 
   getControlCoords() {
-    return this.controlCoords || (this.controlCoords = this.calcOCoords());
+    return (
+      this.controlCoords || (this.controlCoords = this.calcControlCoords())
+    );
   }
 
   getActiveControl() {
@@ -196,7 +199,7 @@ export class InteractiveFabricObject<
   findControl(
     pointer: Point,
     forTouch = false
-  ): { key: string; control: Control; coord: TOCoord } | undefined {
+  ): { key: string; control: Control; coord: TControlCoord } | undefined {
     if (!this.hasControls || !this.canvas) {
       return undefined;
     }
@@ -206,7 +209,7 @@ export class InteractiveFabricObject<
     for (const [key, coord] of Object.entries(coords)) {
       const control = this.controls[key];
       if (
-        //  BBox.build(forTouch ? corner.touchCorner : corner.corner).containsPoint(
+        //  BBox.build(forTouch ? coord.touchCorner : coord.corner).containsPoint(
         //   pointer,
         //   true
         // )
@@ -232,9 +235,9 @@ export class InteractiveFabricObject<
    * This basically just delegates to each control positionHandler
    * WARNING: changing what is passed to positionHandler is a breaking change, since position handler
    * is a public api and should be done just if extremely necessary
-   * @return {Record<string, TOCoord>}
+   * @return {Record<string, TControlCoord>}
    */
-  calcOCoords(): Record<string, TOCoord> {
+  protected calcControlCoords(): Record<string, TControlCoord> {
     const legacyBBox = BBox.legacy(this);
     const angle = this.getTotalAngle();
     const coords = mapValues(this.controls, (control, key) => {
@@ -245,7 +248,8 @@ export class InteractiveFabricObject<
         this,
         control
       );
-      return Object.assign(position, {
+      return {
+        position,
         // Sets the coordinates that determine the interaction area of each control
         // note: if we would switch to ROUND corner area, all of this would disappear.
         // everything would resolve to a single point and a pythagorean theorem for the distance
@@ -255,16 +259,18 @@ export class InteractiveFabricObject<
           this.cornerSize,
           position.x,
           position.y,
-          false
+          false,
+          this
         ),
         touchCorner: control.calcCornerCoords(
           angle,
           this.touchCornerSize,
           position.x,
           position.y,
-          true
+          true,
+          this
         ),
-      });
+      };
     });
 
     // debug code
@@ -294,7 +300,7 @@ export class InteractiveFabricObject<
    */
   setCoords(): void {
     super.setCoords();
-    this.canvas && (this.controlCoords = this.calcOCoords());
+    this.canvas && (this.controlCoords = this.calcControlCoords());
   }
 
   invalidateCoords() {
@@ -522,8 +528,8 @@ export class InteractiveFabricObject<
     const coords = this.getControlCoords();
     this.forEachControl((control, key) => {
       if (control.getVisibility(this, key)) {
-        const p = coords[key];
-        control.render(ctx, p.x, p.y, options, this);
+        const { position } = coords[key];
+        control.render(ctx, position.x, position.y, options, this);
       }
     });
     ctx.restore();
