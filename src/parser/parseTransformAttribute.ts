@@ -8,6 +8,7 @@ import {
   createSkewXMatrix,
   createSkewYMatrix,
   createTranslateMatrix,
+  multiplyTransformMatrices,
   multiplyTransformMatrixArray,
 } from '../util/misc/matrix';
 
@@ -70,7 +71,10 @@ export function parseTransformAttribute(attributeValue: string): TMat2D {
         matrix = createTranslateMatrix(arg0, arg1);
         break;
       case 'rotate':
-        matrix = createRotateMatrix({ angle: arg0 }, { x: arg1, y: arg2 });
+        matrix = multiplyTransformMatrices(
+          createTranslateMatrix(arg1 || 0, arg2 || 0),
+          createRotateMatrix({ angle: arg0 })
+        );
         break;
       case 'scale':
         matrix = createScaleMatrix(arg0, arg1);

@@ -109,7 +109,9 @@
   });
 
   QUnit.test('createRotateMatrix with origin', function (assert) {
-    var matrix = fabric.util.createRotateMatrix({ angle: 90 }, { x: 100, y: 200 });
+    var matrix = fabric.util.multiplyTransformMatrices(
+      fabric.util.createTranslateMatrix(100, 200),
+      fabric.util.createRotateMatrix({ angle: 90 }));
     var expected = [
       0,
       1,
