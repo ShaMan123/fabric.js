@@ -172,7 +172,6 @@ function scaleObject(
     }
     // TODO: use setCoords instead?
     dim = BBox.rotated(target).sendToParent().getDimensionsVector();
-    console.log(dim);
     // missing detection of flip and logic to switch the origin
     if (scaleProportionally && !by) {
       // uniform scaling
