@@ -209,9 +209,8 @@ export class InteractiveFabricObject<
     for (const [key, coord] of Object.entries(coords)) {
       const control = this.controls[key];
       if (
-        //  BBox.build(forTouch ? coord.touchCorner : coord.corner).containsPoint(
+        //  PlaneBBox.build(forTouch ? coord.touchCorner : coord.corner).containsPoint(
         //   pointer,
-        //   true
         // )
         control.shouldActivate(
           key,
@@ -242,12 +241,18 @@ export class InteractiveFabricObject<
     const angle = this.getTotalAngle();
     const coords = mapValues(this.controls, (control, key) => {
       const position = control.positionHandler(
-        legacyBBox.getDimensionsInCanvas(),
-        legacyBBox.transform,
-        legacyBBox.transform,
+        legacyBBox.sendToCanvas().getDimensionsVector(),
+        legacyBBox.getTransformation(),
+        legacyBBox.getTransformation(),
         this,
         control
       );
+      // const position = control.positionHandler2(
+      //   this.bbox.getDimensionsVector(),
+      //   this.bbox.getTransformation(),
+      //   this,
+      //   control[key]
+      // );
       return {
         position,
         // Sets the coordinates that determine the interaction area of each control
