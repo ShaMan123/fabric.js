@@ -4,6 +4,7 @@ import { TCornerPoint, TMat2D } from '../../typedefs';
 import { mapValues } from '../../util/internals';
 import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 import {
+  calcPlaneRotation,
   invertTransform,
   multiplyTransformMatrices,
 } from '../../util/misc/matrix';
@@ -11,7 +12,7 @@ import {
   calcBaseChangeMatrix,
   sendPointToPlane,
 } from '../../util/misc/planeChange';
-import { degreesToRadians } from '../../util/misc/radiansDegreesConversion';
+import { radiansToDegrees } from '../../util/misc/radiansDegreesConversion';
 import { createVector } from '../../util/misc/vectors';
 import type { ObjectGeometry } from './ObjectGeometry';
 
@@ -23,6 +24,8 @@ export interface BBoxPlanes {
 }
 
 export type Coords = [Point, Point, Point, Point] & TCornerPoint;
+
+export type TRotatedBBox = ReturnType<typeof BBox['rotated']>;
 
 export class PlaneBBox {
   private readonly originTransformation: TMat2D;
@@ -180,7 +183,7 @@ export class BBox extends PlaneBBox {
   }
 
   static rotated(target: ObjectGeometry) {
-    const rotation = degreesToRadians(target.getTotalAngle());
+    const rotation = calcPlaneRotation(target.calcTransformMatrix());
     const coords = this.getViewportCoords(target);
     const center = coords.tl.midPointFrom(coords.br);
     const bbox = makeBoundingBoxFromPoints(
@@ -194,11 +197,14 @@ export class BBox extends PlaneBBox {
       ],
       center
     );
-    return new this(coords, transform, this.buildBBoxPlanes(target));
+    return Object.assign(
+      new this(coords, transform, this.buildBBoxPlanes(target)),
+      { angle: radiansToDegrees(rotation), rotation }
+    );
   }
 
   static legacy(target: ObjectGeometry) {
-    const rotation = degreesToRadians(target.getTotalAngle());
+    const rotation = calcPlaneRotation(target.calcTransformMatrix());
     const coords = this.getViewportCoords(target);
     const center = coords.tl.midPointFrom(coords.br);
     const viewportBBox = makeBoundingBoxFromPoints(Object.values(coords));
@@ -221,7 +227,10 @@ export class BBox extends PlaneBBox {
       [new Point(1, 0).rotate(rotation), new Point(0, 1).rotate(rotation)],
       center
     );
-    return new this(legacyCoords, transform, this.buildBBoxPlanes(target));
+    return Object.assign(
+      new this(legacyCoords, transform, this.buildBBoxPlanes(target)),
+      { angle: radiansToDegrees(rotation), rotation }
+    );
   }
 
   static transformed(target: ObjectGeometry) {
