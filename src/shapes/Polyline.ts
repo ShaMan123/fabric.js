@@ -220,55 +220,6 @@ export class Polyline<
   }
 
   /**
-   * @override stroke is taken in account in size
-   */
-  _getNonTransformedDimensions() {
-    return this.exactBoundingBox
-      ? // TODO: fix this
-        new Point(this.width, this.height)
-      : super._getNonTransformedDimensions();
-  }
-
-  /**
-   * @override stroke and skewing are taken into account when projecting stroke on points,
-   * therefore we don't want the default calculation to account for skewing as well.
-   * Though it is possible to pass `width` and `height` in `options`, doing so is very strange, use with discretion.
-   *
-   * @private
-   */
-  _getTransformedDimensions(options: any = {}) {
-    if (this.exactBoundingBox) {
-      let size: Point;
-      /* When `strokeUniform = true`, any changes to the properties require recalculating the `width` and `height` because
-        the stroke projections are affected.
-        When `strokeUniform = false`, we don't need to recalculate for scale transformations, as the effect of scale on
-        projections follows a linear function (e.g. scaleX of 2 just multiply width by 2)*/
-      if (
-        Object.keys(options).some(
-          (key) =>
-            this.strokeUniform ||
-            (this.constructor as typeof Polyline).layoutProperties.includes(
-              key as keyof TProjectStrokeOnPointsOptions
-            )
-        )
-      ) {
-        const { width, height } = this._calcDimensions(options);
-        size = new Point(options.width ?? width, options.height ?? height);
-      } else {
-        size = new Point(
-          options.width ?? this.width,
-          options.height ?? this.height
-        );
-      }
-      return size.multiply(
-        new Point(options.scaleX || this.scaleX, options.scaleY || this.scaleY)
-      );
-    } else {
-      return super._getTransformedDimensions(options);
-    }
-  }
-
-  /**
    * Recalculates dimensions when changing skew and scale
    * @private
    */

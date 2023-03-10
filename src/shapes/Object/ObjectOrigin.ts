@@ -1,7 +1,7 @@
 import { Point } from '../../Point';
 import type { Group } from '../Group';
-import type { TDegree, TOriginX, TOriginY } from '../../typedefs';
-import { calcDimensionsMatrix, transformPoint } from '../../util/misc/matrix';
+import type { TDegree, TMat2D, TOriginX, TOriginY } from '../../typedefs';
+import { transformPoint } from '../../util/misc/matrix';
 import { sizeAfterTransform } from '../../util/misc/objectTransforms';
 import { degreesToRadians } from '../../util/misc/radiansDegreesConversion';
 import { CommonMethods } from '../../CommonMethods';
@@ -10,7 +10,7 @@ import type { BaseProps } from './types/BaseProps';
 import type { FillStrokeProps } from './types/FillStrokeProps';
 import { CENTER, LEFT, TOP } from '../../constants';
 
-export class ObjectOrigin<EventSpec>
+export abstract class ObjectOrigin<EventSpec>
   extends CommonMethods<EventSpec>
   implements BaseProps, Pick<FillStrokeProps, 'strokeWidth' | 'strokeUniform'>
 {
@@ -36,62 +36,10 @@ export class ObjectOrigin<EventSpec>
    */
   declare group?: Group;
 
-  /**
-   * Calculate object bounding box dimensions from its properties scale, skew.
-   * This bounding box is aligned with object angle and not with canvas axis or screen.
-   * @param {Object} [options]
-   * @param {Number} [options.scaleX]
-   * @param {Number} [options.scaleY]
-   * @param {Number} [options.skewX]
-   * @param {Number} [options.skewY]
-   * @private
-   * @returns {Point} dimensions
-   */
-  _getTransformedDimensions(options: any = {}): Point {
-    const dimOptions = {
-      // if scaleX or scaleY are negative numbers,
-      // this will return dimensions that are negative.
-      // and this will break assumptions around the codebase
-      scaleX: this.scaleX,
-      scaleY: this.scaleY,
-      skewX: this.skewX,
-      skewY: this.skewY,
-      width: this.width,
-      height: this.height,
-      strokeWidth: this.strokeWidth,
-      ...options,
-    };
-    // stroke is applied before/after transformations are applied according to `strokeUniform`
-    const strokeWidth = dimOptions.strokeWidth;
-    let preScalingStrokeValue = strokeWidth,
-      postScalingStrokeValue = 0;
-
-    if (this.strokeUniform) {
-      preScalingStrokeValue = 0;
-      postScalingStrokeValue = strokeWidth;
-    }
-    const dimX = dimOptions.width + preScalingStrokeValue,
-      dimY = dimOptions.height + preScalingStrokeValue,
-      noSkew = dimOptions.skewX === 0 && dimOptions.skewY === 0;
-    let finalDimensions;
-    if (noSkew) {
-      finalDimensions = new Point(
-        dimX * dimOptions.scaleX,
-        dimY * dimOptions.scaleY
-      );
-    } else {
-      finalDimensions = sizeAfterTransform(
-        dimX,
-        dimY,
-        calcDimensionsMatrix(dimOptions)
-      );
-    }
-
-    return finalDimensions.scalarAdd(postScalingStrokeValue);
-  }
+  abstract calcOwnMatrix(): TMat2D;
 
   getDimensionsVectorForPositioning() {
-    return sizeAfterTransform(this.width, this.height, this);
+    return sizeAfterTransform(this.width, this.height, this.calcOwnMatrix());
   }
 
   /**

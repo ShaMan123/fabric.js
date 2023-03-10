@@ -25,9 +25,9 @@ import type { ObjectEvents } from '../../EventTypeDefs';
 import type { ControlProps } from './types/ControlProps';
 import { mapValues } from '../../util/internals';
 import { getUnitVector, rotateVector } from '../../util/misc/vectors';
-import { sendVectorToPlane } from '../../util/misc/planeChange';
 import { BBox } from './BBox';
 import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
+import { TRotatedBBox } from './BBox';
 
 type TMatrixCache = {
   key: string;
@@ -40,8 +40,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
 {
   declare padding: number;
 
-  declare bboxCoords?: TCornerPoint;
-  declare bbox?: BBox;
+  declare bbox: TRotatedBBox;
 
   /**
    * storage cache for object transform matrix
@@ -258,8 +257,6 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     return Intersection.isPointInPolygon(point, this.getCoords());
   }
 
-  isVisibleInParent() {}
-
   /**
    * Checks if object is contained within the canvas with current viewportTransform
    * the check is done stopping at first point that appears on screen
@@ -360,7 +357,9 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
       .sendToCanvas()
       .getDimensionsVector();
     const boundingRectFactor = rotated[axis] / transformed[axis];
-    this.scale(value / this.width / boundingRectFactor);
+    this.scale(
+      value / new Point(this.width, this.height)[axis] / boundingRectFactor
+    );
   }
 
   getCanvasRetinaScaling() {
@@ -449,7 +448,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * Calculates the coordinates of the 4 corner of the bbox
    * @return {TCornerPoint}
    */
-  calcCoords(): TCornerPoint {
+  calcCoords() {
     // const size = new Point(this.width, this.height);
     // return projectStrokeOnPoints(
     //   [
@@ -486,7 +485,6 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * Calling this method is probably redundant, consider calling {@link invalidateCoords} instead.
    */
   setCoords(): void {
-    this.bboxCoords = this.calcCoords();
     this.bbox = BBox.rotated(this);
     // debug code
     setTimeout(() => {
@@ -531,8 +529,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   }
 
   invalidateCoords() {
-    delete this.bboxCoords;
-    delete this.bbox;
+    // delete this.bbox;
   }
 
   transformMatrixKey(skipGroup = false): string {
@@ -630,54 +627,5 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
       value,
     };
     return value;
-  }
-
-  /**
-   * Calculate object dimensions from its properties
-   * @deprecated
-   * @private
-   * @returns {Point} dimensions
-   */
-  _getNonTransformedDimensions(): Point {
-    return new Point(this.width, this.height).scalarAdd(this.strokeWidth);
-  }
-
-  /**
-   * Calculate object bounding box dimensions from its properties scale, skew.
-   * @deprecated
-   * @param {Object} [options]
-   * @param {Number} [options.scaleX]
-   * @param {Number} [options.scaleY]
-   * @param {Number} [options.skewX]
-   * @param {Number} [options.skewY]
-   * @private
-   * @returns {Point} dimensions
-   */
-  _getTransformedDimensions1(options: any = {}): Point {
-    return sendVectorToPlane(
-      this.calcDimensionsVector(/*new Point(options.width||)*/),
-      this.group?.calcTransformMatrix(),
-      composeMatrix({
-        scaleX: this.scaleX,
-        scaleY: this.scaleY,
-        skewX: this.skewX,
-        skewY: this.skewY,
-        ...options,
-      })
-    );
-  }
-
-  /**
-   * Calculate object dimensions for controls box, including padding and canvas zoom.
-   * and active selection
-   * @deprecated
-   * @private
-   * @param {object} [options] transform options
-   * @returns {Point} dimensions
-   */
-  _calculateCurrentDimensions(options?: any): Point {
-    return this._getTransformedDimensions(options)
-      .transform(this.getViewportTransform(), true)
-      .scalarAdd(2 * this.padding);
   }
 }

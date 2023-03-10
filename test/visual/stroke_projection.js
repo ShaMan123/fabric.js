@@ -143,7 +143,7 @@ QUnit.module.skip('stroke projection', (hooks) => {
     target.scaleX = scale.x;
     target.scaleY = scale.y;
     target.setDimensions();
-    const size = target._getTransformedDimensions(),
+    const size = target.getDimensionsVectorForPositioning(),
       bg = new fabric.Rect({
         width: size.x,
         height: size.y,
