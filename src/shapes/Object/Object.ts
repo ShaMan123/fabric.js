@@ -1,18 +1,10 @@
 import { config } from '../../config';
-import {
-  ALIASING_LIMIT,
-  CENTER,
-  iMatrix,
-  LEFT,
-  TOP,
-  VERSION,
-} from '../../constants';
+import { ALIASING_LIMIT, iMatrix, LEFT, TOP, VERSION } from '../../constants';
 import type { ObjectEvents } from '../../EventTypeDefs';
 import { AnimatableObject } from './AnimatableObject';
 import { Point } from '../../Point';
 import { Shadow } from '../../Shadow';
 import type {
-  TDegree,
   TFiller,
   TCacheCanvasDimensions,
   Abortable,
@@ -1461,11 +1453,7 @@ export class FabricObject<
     if (options.format === 'jpeg') {
       canvas.backgroundColor = '#fff';
     }
-    this.setPositionByOrigin(
-      new Point(canvas.width / 2, canvas.height / 2),
-      CENTER,
-      CENTER
-    );
+    this.setRelativeCenterPoint(new Point(canvas.width / 2, canvas.height / 2));
     const originalCanvas = this.canvas;
     // static canvas and canvas have both an array of InteractiveObjects
     // @ts-expect-error this needs to be fixed somehow, or ignored globally
@@ -1539,36 +1527,6 @@ export class FabricObject<
   toJSON() {
     // delegate, not alias
     return this.toObject();
-  }
-
-  /**
-   * Sets "angle" of an instance with centered rotation
-   * @param {TDegree} angle Angle value (in degrees)
-   */
-  rotate(angle: TDegree) {
-    const { centeredRotation, originX, originY } = this;
-
-    if (centeredRotation) {
-      const { x, y } = this.getRelativeCenterPoint();
-      this.originX = CENTER;
-      this.originY = CENTER;
-      this.left = x;
-      this.top = y;
-    }
-
-    this.set('angle', angle);
-
-    if (centeredRotation) {
-      const { x, y } = this.translateToOriginPoint(
-        this.getRelativeCenterPoint(),
-        originX,
-        originY
-      );
-      this.left = x;
-      this.top = y;
-      this.originX = originX;
-      this.originY = originY;
-    }
   }
 
   /**

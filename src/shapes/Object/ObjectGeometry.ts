@@ -1,33 +1,26 @@
-import type {
-  TAxis,
-  TBBox,
-  TCornerPoint,
-  TDegree,
-  TMat2D,
-  TOriginX,
-  TOriginY,
-} from '../../typedefs';
+import { Canvas } from '../../canvas/Canvas';
+import { StaticCanvas } from '../../canvas/StaticCanvas';
 import { iMatrix } from '../../constants';
+import { ObjectEvents } from '../../EventTypeDefs';
 import { Intersection } from '../../Intersection';
 import { Point } from '../../Point';
+import type { TAxis, TBBox, TDegree, TMat2D } from '../../typedefs';
+import { mapValues } from '../../util/internals';
 import {
-  composeMatrix,
+  calcPlaneRotation,
+  createRotateMatrix,
   invertTransform,
   multiplyTransformMatrices,
-  transformPoint,
-  calcPlaneRotation,
+  multiplyTransformMatrixArray,
+  qrDecompose,
 } from '../../util/misc/matrix';
-import { radiansToDegrees } from '../../util/misc/radiansDegreesConversion';
-import type { Canvas } from '../../canvas/Canvas';
-import type { StaticCanvas } from '../../canvas/StaticCanvas';
-import { ObjectOrigin } from './ObjectOrigin';
-import type { ObjectEvents } from '../../EventTypeDefs';
 import type { ControlProps } from './types/ControlProps';
-import { mapValues } from '../../util/internals';
 import { getUnitVector, rotateVector } from '../../util/misc/vectors';
 import { BBox } from './BBox';
 import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 import { TRotatedBBox } from './BBox';
+import { ObjectLayout } from './ObjectLayout';
+import { FillStrokeProps } from './types/FillStrokeProps';
 
 type TMatrixCache = {
   key: string;
@@ -35,22 +28,16 @@ type TMatrixCache = {
 };
 
 export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
-  extends ObjectOrigin<EventSpec>
-  implements Pick<ControlProps, 'padding'>
+  extends ObjectLayout<EventSpec>
+  implements
+    Pick<FillStrokeProps, 'strokeWidth' | 'strokeUniform'>,
+    Pick<ControlProps, 'padding'>
 {
+  declare strokeWidth: number;
+  declare strokeUniform: boolean;
   declare padding: number;
 
   declare bbox: TRotatedBBox;
-
-  /**
-   * storage cache for object transform matrix
-   */
-  declare ownMatrixCache?: TMatrixCache;
-
-  /**
-   * storage cache for object full transform matrix
-   */
-  declare matrixCache?: TMatrixCache;
 
   /**
    * A Reference of the Canvas where the object is actually added
@@ -63,121 +50,161 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   skipOffscreen = true;
 
   /**
-   * @returns {number} x position according to object's {@link originX} property in canvas coordinate plane
+   * Override this method if needed
    */
-  getX(): number {
-    return this.getXY().x;
+  needsViewportCoords() {
+    return this.strokeUniform || !this.padding;
+  }
+
+  getCanvasRetinaScaling() {
+    return this.canvas?.getRetinaScaling() || 1;
   }
 
   /**
-   * @param {number} value x position according to object's {@link originX} property in canvas coordinate plane
+   * Retrieves viewportTransform from Object's canvas if possible
+   * @method getViewportTransform
+   * @memberOf FabricObject.prototype
+   * @return {TMat2D}
    */
-  setX(value: number) {
-    this.setXY(this.getXY().setX(value));
+  getViewportTransform(): TMat2D {
+    return this.canvas?.viewportTransform || (iMatrix.concat() as TMat2D);
   }
 
-  /**
-   * @returns {number} y position according to object's {@link originY} property in canvas coordinate plane
-   */
-  getY(): number {
-    return this.getXY().y;
-  }
-
-  /**
-   * @param {number} value y position according to object's {@link originY} property in canvas coordinate plane
-   */
-  setY(value: number) {
-    this.setXY(this.getXY().setY(value));
-  }
-
-  /**
-   * @returns {number} x position according to object's {@link originX} property in parent's coordinate plane\
-   * if parent is canvas then this property is identical to {@link getX}
-   */
-  getRelativeX(): number {
-    return this.left;
-  }
-
-  /**
-   * @param {number} value x position according to object's {@link originX} property in parent's coordinate plane\
-   * if parent is canvas then this method is identical to {@link setX}
-   */
-  setRelativeX(value: number) {
-    this.left = value;
-  }
-
-  /**
-   * @returns {number} y position according to object's {@link originY} property in parent's coordinate plane\
-   * if parent is canvas then this property is identical to {@link getY}
-   */
-  getRelativeY(): number {
-    return this.top;
-  }
-
-  /**
-   * @param {number} value y position according to object's {@link originY} property in parent's coordinate plane\
-   * if parent is canvas then this property is identical to {@link setY}
-   */
-  setRelativeY(value: number) {
-    this.top = value;
-  }
-
-  /**
-   * @returns {Point} x position according to object's {@link originX} {@link originY} properties in canvas coordinate plane
-   */
-  getXY(): Point {
-    const relativePosition = this.getRelativeXY();
-    return this.group
-      ? transformPoint(relativePosition, this.group.calcTransformMatrix())
-      : relativePosition;
-  }
-
-  /**
-   * Set an object position to a particular point, the point is intended in absolute ( canvas ) coordinate.
-   * You can specify {@link originX} and {@link originY} values,
-   * that otherwise are the object's current values.
-   * @example <caption>Set object's bottom left corner to point (5,5) on canvas</caption>
-   * object.setXY(new Point(5, 5), 'left', 'bottom').
-   * @param {Point} point position in canvas coordinate plane
-   * @param {TOriginX} [originX] Horizontal origin: 'left', 'center' or 'right'
-   * @param {TOriginY} [originY] Vertical origin: 'top', 'center' or 'bottom'
-   */
-  setXY(point: Point, originX?: TOriginX, originY?: TOriginY) {
-    if (this.group) {
-      point = transformPoint(
-        point,
-        invertTransform(this.group.calcTransformMatrix())
-      );
-    }
-    this.setRelativeXY(point, originX, originY);
-  }
-
-  /**
-   * @returns {Point} x,y position according to object's {@link originX} {@link originY} properties in parent's coordinate plane
-   */
-  getRelativeXY(): Point {
-    return new Point(this.left, this.top);
-  }
-
-  /**
-   * As {@link setXY}, but in current parent's coordinate plane (the current group if any or the canvas)
-   * @param {Point} point position according to object's {@link originX} {@link originY} properties in parent's coordinate plane
-   * @param {TOriginX} [originX] Horizontal origin: 'left', 'center' or 'right'
-   * @param {TOriginY} [originY] Vertical origin: 'top', 'center' or 'bottom'
-   */
-  setRelativeXY(
-    point: Point,
-    originX: TOriginX = this.originX,
-    originY: TOriginY = this.originY
+  protected calcDimensionsVector(
+    origin = new Point(1, 1),
+    {
+      applyViewportTransform = this.needsViewportCoords(),
+    }: {
+      applyViewportTransform?: boolean;
+    } = {}
   ) {
-    this.setPositionByOrigin(point, originX, originY);
+    const vpt = applyViewportTransform ? this.getViewportTransform() : iMatrix;
+    const dimVector = origin
+      .multiply(new Point(this.width, this.height))
+      .add(origin.scalarMultiply(!this.strokeUniform ? this.strokeWidth : 0))
+      .transform(
+        multiplyTransformMatrices(vpt, this.calcTransformMatrix()),
+        true
+      );
+    const strokeUniformVector = getUnitVector(dimVector).scalarMultiply(
+      this.strokeUniform ? this.strokeWidth : 0
+    );
+    return dimVector.add(strokeUniformVector);
+  }
+
+  protected calcCoord(
+    origin: Point,
+    {
+      offset = new Point(),
+      applyViewportTransform = this.needsViewportCoords(),
+      padding = 0,
+    }: {
+      offset?: Point;
+      applyViewportTransform?: boolean;
+      padding?: number;
+    } = {}
+  ) {
+    const vpt = applyViewportTransform ? this.getViewportTransform() : iMatrix;
+    const offsetVector = rotateVector(
+      offset.add(origin.scalarMultiply(padding * 2)),
+      calcPlaneRotation(this.calcTransformMatrix())
+    );
+    const realCenter = this.getCenterPoint().transform(vpt);
+    return realCenter
+      .add(this.calcDimensionsVector(origin, { applyViewportTransform }))
+      .add(offsetVector);
   }
 
   /**
-   * @deprecated intermidiate method to be removed, do not use
+   * Calculates the coordinates of the 4 corner of the bbox
+   * @return {TCornerPoint}
    */
-  protected isStrokeAccountedForInDimensions() {
-    return false;
+  calcCoords() {
+    // const size = new Point(this.width, this.height);
+    // return projectStrokeOnPoints(
+    //   [
+    //     new Point(-0.5, -0.5),
+    //     new Point(0.5, -0.5),
+    //     new Point(-0.5, 0.5),
+    //     new Point(0.5, 0.5),
+    //   ].map((origin) => origin.multiply(size)),
+    //   {
+    //     ...this,
+    //     ...qrDecompose(
+    //       multiplyTransformMatrices(
+    //         this.needsViewportCoords() ? this.getViewportTransform() : iMatrix,
+    //         this.calcTransformMatrix()
+    //       )
+    //     ),
+    //   }
+    // );
+
+    return mapValues(
+      {
+        tl: new Point(-0.5, -0.5),
+        tr: new Point(0.5, -0.5),
+        bl: new Point(-0.5, 0.5),
+        br: new Point(0.5, 0.5),
+      },
+      (origin) => this.calcCoord(origin)
+    );
+  }
+
+  /**
+   * Sets corner and controls position coordinates based on current angle, width and height, left and top.
+   *
+   * Calling this method is probably redundant, consider calling {@link invalidateCoords} instead.
+   */
+  setCoords(): void {
+    this.bbox = BBox.rotated(this);
+    // debug code
+    setTimeout(() => {
+      const canvas = this.canvas;
+      if (!canvas) return;
+      const ctx = canvas.contextTop;
+      canvas.clearContext(ctx);
+      ctx.save();
+      const draw = (point: Point, color: string, radius = 6) => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.ellipse(point.x, point.y, radius, radius, 0, 0, 360);
+        ctx.closePath();
+        ctx.fill();
+      };
+      [
+        new Point(-0.5, -0.5),
+        new Point(0.5, -0.5),
+        new Point(-0.5, 0.5),
+        new Point(0.5, 0.5),
+      ].forEach((origin) => {
+        draw(BBox.canvas(this).pointFromOrigin(origin), 'yellow', 10);
+        draw(BBox.rotated(this).pointFromOrigin(origin), 'orange', 8);
+        draw(BBox.transformed(this).pointFromOrigin(origin), 'silver', 6);
+        ctx.save();
+        ctx.transform(...this.getViewportTransform());
+        draw(
+          BBox.canvas(this).sendToCanvas().pointFromOrigin(origin),
+          'red',
+          10
+        );
+        draw(
+          BBox.rotated(this).sendToCanvas().pointFromOrigin(origin),
+          'magenta',
+          8
+        );
+        draw(
+          BBox.transformed(this).sendToCanvas().pointFromOrigin(origin),
+          'blue',
+          6
+        );
+        ctx.restore();
+      });
+      ctx.restore();
+    }, 50);
+  }
+
+  invalidateCoords() {
+    // delete this.bbox;
   }
 
   /**
@@ -348,6 +375,25 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     this.invalidateCoords();
   }
 
+  /**
+   * @param {TDegree} angle Angle value (in degrees)
+   * @deprecated avoid decomposition
+   */
+  rotate(angle: TDegree) {
+    const origin = this.centeredRotation ? this.getCenterPoint() : this.getXY();
+    const t = multiplyTransformMatrixArray([
+      this.group && invertTransform(this.group.calcTransformMatrix()),
+      createRotateMatrix({
+        angle: angle - calcPlaneRotation(this.calcTransformMatrix()),
+      }),
+      this.calcTransformMatrix(),
+    ]);
+    const { angle: decomposedAngle } = qrDecompose(t);
+    this.set({ angle: decomposedAngle });
+    this.centeredRotation ? this.setCenterPoint(origin) : this.setXY(origin);
+    this.setCoords();
+  }
+
   scaleAxisTo(axis: TAxis, value: number, inViewport: boolean) {
     // adjust to bounding rect factor so that rotated shapes would fit as well
     const transformed = BBox.transformed(this)
@@ -360,276 +406,5 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     this.scale(
       value / new Point(this.width, this.height)[axis] / boundingRectFactor
     );
-  }
-
-  getCanvasRetinaScaling() {
-    return this.canvas?.getRetinaScaling() || 1;
-  }
-
-  /**
-   * Returns the object angle relative to canvas counting also the group property
-   * @returns {TDegree}
-   */
-  getTotalAngle(): TDegree {
-    return this.group
-      ? radiansToDegrees(calcPlaneRotation(this.calcTransformMatrix()))
-      : this.angle;
-  }
-
-  /**
-   * Retrieves viewportTransform from Object's canvas if available
-   * @return {TMat2D}
-   */
-  getViewportTransform(): TMat2D {
-    return this.canvas?.viewportTransform || (iMatrix.concat() as TMat2D);
-  }
-
-  needsViewportCoords() {
-    return this.strokeUniform || !this.padding;
-  }
-
-  protected calcDimensionsVector(
-    origin = new Point(1, 1),
-    // @TODO pass t instead
-    {
-      applyViewportTransform = this.needsViewportCoords(),
-    }: {
-      applyViewportTransform?: boolean;
-    } = {}
-  ) {
-    const vpt = applyViewportTransform ? this.getViewportTransform() : iMatrix;
-    const dimVector = origin
-      .multiply(new Point(this.width, this.height))
-      .add(origin.scalarMultiply(!this.strokeUniform ? this.strokeWidth : 0))
-      .transform(
-        applyViewportTransform
-          ? multiplyTransformMatrices(
-              this.getViewportTransform(),
-              this.calcTransformMatrix()
-            )
-          : this.calcTransformMatrix(),
-        true
-      );
-    const strokeUniformVector = getUnitVector(dimVector).scalarMultiply(
-      this.strokeUniform ? this.strokeWidth : 0
-    );
-    return dimVector.add(strokeUniformVector);
-  }
-
-  protected calcCoord(
-    origin: Point,
-    {
-      offset = new Point(),
-      applyViewportTransform = this.needsViewportCoords(),
-      padding = 0,
-    }: {
-      offset?: Point;
-      applyViewportTransform?: boolean;
-      padding?: number;
-    } = {}
-  ) {
-    const vpt = applyViewportTransform && this.getViewportTransform();
-    const t = vpt
-      ? multiplyTransformMatrices(vpt, this.calcTransformMatrix())
-      : this.calcTransformMatrix();
-    const offsetVector = rotateVector(
-      offset.add(origin.scalarMultiply(padding * 2)),
-      calcPlaneRotation(t)
-    );
-    const realCenter = vpt
-      ? this.getCenterPoint().transform(vpt)
-      : this.getCenterPoint();
-    return realCenter
-      .add(this.calcDimensionsVector(origin, { applyViewportTransform }))
-      .add(offsetVector);
-  }
-
-  /**
-   * Calculates the coordinates of the 4 corner of the bbox
-   * @return {TCornerPoint}
-   */
-  calcCoords() {
-    // const size = new Point(this.width, this.height);
-    // return projectStrokeOnPoints(
-    //   [
-    //     new Point(-0.5, -0.5),
-    //     new Point(0.5, -0.5),
-    //     new Point(-0.5, 0.5),
-    //     new Point(0.5, 0.5),
-    //   ].map((origin) => origin.multiply(size)),
-    //   {
-    //     ...this,
-    //     ...qrDecompose(
-    //       multiplyTransformMatrices(
-    //         this.needsViewportCoords() ? this.getViewportTransform() : iMatrix,
-    //         this.calcTransformMatrix()
-    //       )
-    //     ),
-    //   }
-    // );
-
-    return mapValues(
-      {
-        tl: new Point(-0.5, -0.5),
-        tr: new Point(0.5, -0.5),
-        bl: new Point(-0.5, 0.5),
-        br: new Point(0.5, 0.5),
-      },
-      (origin) => this.calcCoord(origin)
-    );
-  }
-
-  /**
-   * Sets corner and controls position coordinates based on current angle, width and height, left and top.
-   *
-   * Calling this method is probably redundant, consider calling {@link invalidateCoords} instead.
-   */
-  setCoords(): void {
-    this.bbox = BBox.rotated(this);
-    // debug code
-    setTimeout(() => {
-      const canvas = this.canvas;
-      if (!canvas) return;
-      const ctx = canvas.contextTop;
-      canvas.clearContext(ctx);
-      ctx.save();
-      const draw = (point: Point, color: string, radius = 6) => {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.ellipse(point.x, point.y, radius, radius, 0, 0, 360);
-        ctx.closePath();
-        ctx.fill();
-      };
-      [
-        new Point(-0.5, -0.5),
-        new Point(0.5, -0.5),
-        new Point(-0.5, 0.5),
-        new Point(0.5, 0.5),
-      ].forEach((origin) => {
-        draw(BBox.canvas(this).pointFromOrigin(origin), 'yellow', 10);
-        draw(BBox.rotated(this).pointFromOrigin(origin), 'orange', 8);
-        draw(BBox.transformed(this).pointFromOrigin(origin), 'silver', 6);
-        ctx.save();
-        ctx.transform(...this.getViewportTransform());
-        draw(
-          BBox.canvas(this).sendToCanvas().pointFromOrigin(origin),
-          'red',
-          10
-        );
-        draw(
-          BBox.rotated(this).sendToCanvas().pointFromOrigin(origin),
-          'magenta',
-          8
-        );
-        draw(
-          BBox.transformed(this).sendToCanvas().pointFromOrigin(origin),
-          'blue',
-          6
-        );
-        ctx.restore();
-      });
-      ctx.restore();
-    }, 50);
-  }
-
-  invalidateCoords() {
-    // delete this.bbox;
-  }
-
-  transformMatrixKey(skipGroup = false): string {
-    const sep = '_';
-    let prefix = '';
-    if (!skipGroup && this.group) {
-      prefix = this.group.transformMatrixKey(skipGroup) + sep;
-    }
-    return (
-      prefix +
-      this.top +
-      sep +
-      this.left +
-      sep +
-      this.scaleX +
-      sep +
-      this.scaleY +
-      sep +
-      this.skewX +
-      sep +
-      this.skewY +
-      sep +
-      this.angle +
-      sep +
-      this.originX +
-      sep +
-      this.originY +
-      sep +
-      this.width +
-      sep +
-      this.height +
-      sep +
-      this.strokeWidth +
-      this.flipX +
-      this.flipY
-    );
-  }
-
-  /**
-   * calculate transform matrix that represents the current transformations from the
-   * object's properties.
-   * @param {Boolean} [skipGroup] return transform matrix for object not counting parent transformations
-   * There are some situation in which this is useful to avoid the fake rotation.
-   * @return {TMat2D} transform matrix for the object
-   */
-  calcTransformMatrix(skipGroup = false): TMat2D {
-    let matrix = this.calcOwnMatrix();
-    if (skipGroup || !this.group) {
-      return matrix;
-    }
-    const key = this.transformMatrixKey(skipGroup),
-      cache = this.matrixCache;
-    if (cache && cache.key === key) {
-      return cache.value;
-    }
-    if (this.group) {
-      matrix = multiplyTransformMatrices(
-        this.group.calcTransformMatrix(false),
-        matrix
-      );
-    }
-    this.matrixCache = {
-      key,
-      value: matrix,
-    };
-    return matrix;
-  }
-
-  /**
-   * calculate transform matrix that represents the current transformations from the
-   * object's properties, this matrix does not include the group transformation
-   * @return {TMat2D} transform matrix for the object
-   */
-  calcOwnMatrix(): TMat2D {
-    const key = this.transformMatrixKey(true),
-      cache = this.ownMatrixCache;
-    if (cache && cache.key === key) {
-      return cache.value;
-    }
-    const center = this.getRelativeCenterPoint(),
-      options = {
-        angle: this.angle,
-        translateX: center.x,
-        translateY: center.y,
-        scaleX: this.scaleX,
-        scaleY: this.scaleY,
-        skewX: this.skewX,
-        skewY: this.skewY,
-        flipX: this.flipX,
-        flipY: this.flipY,
-      },
-      value = composeMatrix(options);
-    this.ownMatrixCache = {
-      key,
-      value,
-    };
-    return value;
   }
 }

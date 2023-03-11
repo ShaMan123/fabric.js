@@ -10,7 +10,6 @@ import {
 import { removeTransformMatrixForSvgParsing } from '../util/transform_matrix_removal';
 import type { FabricObject } from '../shapes/Object/FabricObject';
 import { Point } from '../Point';
-import { CENTER } from '../constants';
 import { getGradientDefs } from './getGradientDefs';
 import { getCSSRules } from './getCSSRules';
 import type { LoadImageOptions } from '../util';
@@ -203,11 +202,7 @@ export class ElementsParser {
         skewX,
         skewY: 0,
       });
-      clipPath.setPositionByOrigin(
-        new Point(translateX, translateY),
-        CENTER,
-        CENTER
-      );
+      clipPath.setRelativeCenterPoint(new Point(translateX, translateY));
       obj.clipPath = clipPath;
     } else {
       // if clip-path does not resolve to any element, delete the property.

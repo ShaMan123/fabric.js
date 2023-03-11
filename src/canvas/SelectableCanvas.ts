@@ -751,6 +751,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
    * @param {Point} [scenePoint] point in scene coordinates
    * @return {Boolean} true if point is contained within an area of given object
    * @private
+   * @TODO revisit this ugly impl
    */
   private _pointIsInObjectSelectionArea(obj: FabricObject, scenePoint: Point) {
     // getCoords will already take care of group de-nesting

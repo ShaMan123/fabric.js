@@ -16,8 +16,9 @@ import { FabricObject, cacheProperties } from './Object/FabricObject';
 import type { FabricObjectProps, SerializedObjectProps } from './Object/types';
 import type { ObjectEvents } from '../EventTypeDefs';
 import { cloneDeep } from '../util/internals/cloneDeep';
-import { CENTER, LEFT, TOP } from '../constants';
+import { LEFT, TOP } from '../constants';
 import type { CSSRules } from '../parser/typedefs';
+import { sendVectorToPlane } from '../util';
 
 export const polylineDefaultValues: Partial<TClassProperties<Polyline>> = {
   /**
@@ -205,18 +206,13 @@ export class Polyline<
       this._calcDimensions();
     this.set({ width, height, pathOffset, strokeOffset, strokeDiff });
     adjustPosition &&
-      this.setPositionByOrigin(
-        new Point(left + width / 2, top + height / 2),
-        CENTER,
-        CENTER
+      this.setRelativeCenterPoint(
+        // @TODO: needs testing
+        sendVectorToPlane(
+          new Point(left + width / 2, top + height / 2),
+          this.calcOwnMatrix()
+        )
       );
-  }
-
-  /**
-   * @deprecated intermidiate method to be removed, do not use
-   */
-  protected isStrokeAccountedForInDimensions() {
-    return this.exactBoundingBox;
   }
 
   /**

@@ -80,6 +80,7 @@ export class Path<
   ) {
     super(options as Props);
     this._setPath(path || [], true);
+    // @TODO fix this bug not respecting origin
     typeof left === 'number' && this.set(LEFT, left);
     typeof top === 'number' && this.set(TOP, top);
   }

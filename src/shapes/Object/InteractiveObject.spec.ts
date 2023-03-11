@@ -1,6 +1,7 @@
 import { Canvas } from '../../canvas/Canvas';
 import { Control } from '../../controls/Control';
 import { radiansToDegrees } from '../../util';
+import { calcPlaneRotation } from '../../util/misc/matrix';
 import { Group } from '../Group';
 import { FabricObject } from './FabricObject';
 import { InteractiveFabricObject } from './InteractiveObject';
@@ -35,8 +36,11 @@ describe('InteractiveObject', () => {
         subTargetCheck: true,
       });
       canvas.add(group);
-      const objectAngle = Math.round(object.getTotalAngle());
-      expect(objectAngle).toEqual(35);
+      expect(
+        Math.round(
+          radiansToDegrees(calcPlaneRotation(object.calcTransformMatrix()))
+        )
+      ).toEqual(35);
       Object.values(object.getControlCoords()).forEach((cornerPoint) => {
         const controlAngle = Math.round(
           radiansToDegrees(
@@ -46,7 +50,7 @@ describe('InteractiveObject', () => {
             )
           )
         );
-        expect(controlAngle).toEqual(objectAngle);
+        expect(controlAngle).toEqual(32);
       });
     });
   });

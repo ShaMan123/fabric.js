@@ -7,14 +7,16 @@ import {
   calcPlaneRotation,
   invertTransform,
   multiplyTransformMatrices,
+  multiplyTransformMatrixArray,
 } from '../../util/misc/matrix';
 import {
   calcBaseChangeMatrix,
+  calcPlaneChangeMatrix,
   sendPointToPlane,
 } from '../../util/misc/planeChange';
 import { radiansToDegrees } from '../../util/misc/radiansDegreesConversion';
 import { resolveOrigin } from '../../util/misc/resolveOrigin';
-import { createVector } from '../../util/misc/vectors';
+import { calcVectorRotation, createVector } from '../../util/misc/vectors';
 import type { ObjectGeometry } from './ObjectGeometry';
 
 const CENTER_ORIGIN = { x: 'center', y: 'center' } as const;
@@ -74,9 +76,21 @@ export class PlaneBBox {
     return makeBoundingBoxFromPoints(this.getCoords());
   }
 
+  getCenterPoint() {
+    return this.pointFromOrigin(new Point());
+  }
+
   getDimensionsVector() {
     const { width, height } = this.getBBox();
     return new Point(width, height);
+  }
+
+  static calcRotation({ tl, tr }: Record<'tl' | 'tr' | 'bl' | 'br', Point>) {
+    return calcVectorRotation(createVector(tl, tr));
+  }
+
+  getRotation() {
+    return PlaneBBox.calcRotation(this.getCoordMap());
   }
 
   pointFromOrigin(origin: Point) {
@@ -99,15 +113,19 @@ export class PlaneBBox {
     return new Point(resolveOrigin(x), resolveOrigin(y));
   }
 
-  static getOriginDiff(from: OriginDiff, to: OriginDiff) {
-    return PlaneBBox.resolveOrigin(to).subtract(PlaneBBox.resolveOrigin(from));
-  }
-
-  vectorFromOriginDiff(
+  static getOriginDiff(
     from: OriginDiff = CENTER_ORIGIN,
     to: OriginDiff = CENTER_ORIGIN
   ) {
+    return PlaneBBox.resolveOrigin(to).subtract(PlaneBBox.resolveOrigin(from));
+  }
+
+  vectorFromOriginDiff(from?: OriginDiff, to?: OriginDiff) {
     return this.vectorFromOrigin(PlaneBBox.getOriginDiff(from, to));
+  }
+
+  calcOriginTranslation(origin: Point, prev: this) {
+    return this.pointFromOrigin(origin).subtract(prev.pointFromOrigin(origin));
   }
 
   containsPoint(point: Point) {
@@ -154,6 +172,41 @@ export class BBox extends PlaneBBox {
     return this.sendToPlane(this.planes.self());
   }
 
+  preMultiply(transform: TMat2D) {
+    // const own = multiplyTransformMatrixArray([
+    //   // back to parent
+    //   invertTransform(this.sendToParent().getTransformation()),
+    //   // apply post transform
+    //   transform,
+    //   // vpt
+    //   this.getTransformation(),
+    //   // back to origin
+    //   invertTransform(this.sendToSelf().getTransformation()),
+    //   // in self plane
+    // ]);
+    const parent = this.planes.parent();
+    const ownPreTransform = multiplyTransformMatrixArray([
+      invertTransform(parent),
+      transform,
+      parent,
+    ]);
+    const self = multiplyTransformMatrixArray([
+      parent,
+      this.getOwnTransform(),
+      ownPreTransform,
+    ]);
+    return new BBox(this.getTransformation(), {
+      ...this.planes,
+      self() {
+        return self;
+      },
+    });
+  }
+
+  getOwnTransform() {
+    return calcPlaneChangeMatrix(this.planes.self(), this.planes.parent());
+  }
+
   static getViewportCoords(target: ObjectGeometry) {
     const coords = target.calcCoords();
     if (target.needsViewportCoords()) {
@@ -197,8 +250,9 @@ export class BBox extends PlaneBBox {
   }
 
   static rotated(target: ObjectGeometry) {
-    const rotation = calcPlaneRotation(target.calcTransformMatrix());
     const coords = this.getViewportCoords(target);
+    // const angle = this.calcRotation(target);
+    const rotation = this.calcRotation(coords);
     const center = coords.tl.midPointFrom(coords.br);
     const bbox = makeBoundingBoxFromPoints(
       Object.values(coords).map((coord) => coord.rotate(-rotation, center))
@@ -212,7 +266,7 @@ export class BBox extends PlaneBBox {
       center
     );
     return Object.assign(new this(transform, this.buildBBoxPlanes(target)), {
-      angle: radiansToDegrees(rotation),
+      // angle,
       rotation,
     });
   }
