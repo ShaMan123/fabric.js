@@ -19,6 +19,7 @@ import { getUnitVector, rotateVector } from '../../util/misc/vectors';
 import { BBox } from './BBox';
 import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 import { TRotatedBBox } from './BBox';
+import { CanvasBBox } from './BBox';
 import { ObjectLayout } from './ObjectLayout';
 import { FillStrokeProps } from './types/FillStrokeProps';
 
@@ -289,51 +290,20 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * the check is done stopping at first point that appears on screen
    * @return {Boolean} true if object is fully or partially contained within canvas
    */
-  isOnScreen(): boolean {
-    if (!this.canvas) {
-      return false;
-    }
-    const { tl, br } = this.canvas.vptCoords;
-    const points = this.getCoords();
-    // if some point is on screen, the object is on screen.
-    if (
-      points.some(
-        (point) =>
-          point.x <= br.x &&
-          point.x >= tl.x &&
-          point.y <= br.y &&
-          point.y >= tl.y
-      )
-    ) {
-      return true;
-    }
-    // no points on screen, check intersection with absolute coordinates
-    if (this.intersectsWithRect(tl, br)) {
-      return true;
-    }
-    // check if the object is so big that it contains the entire viewport
-    return this.containsPoint(tl.midPointFrom(br));
+  isOnScreen(): boolean | undefined {
+    return this.canvas && CanvasBBox.bbox(this.canvas).overlaps(this.bbox);
   }
 
   /**
    * Checks if object is partially contained within the canvas with current viewportTransform
    * @return {Boolean} true if object is partially contained within canvas
    */
-  isPartiallyOnScreen(): boolean {
+  isPartiallyOnScreen(): boolean | undefined {
     if (!this.canvas) {
-      return false;
+      return undefined;
     }
-    const { tl, br } = this.canvas.vptCoords;
-    if (this.intersectsWithRect(tl, br)) {
-      return true;
-    }
-    const allPointsAreOutside = this.getCoords().every(
-      (point) =>
-        (point.x >= br.x || point.x <= tl.x) &&
-        (point.y >= br.y || point.y <= tl.y)
-    );
-    // check if the object is so big that it contains the entire viewport
-    return allPointsAreOutside && this.containsPoint(tl.midPointFrom(br));
+    const bbox = CanvasBBox.bbox(this.canvas);
+    return bbox.intersects(this.bbox) || bbox.isContainedBy(this.bbox);
   }
 
   /**
