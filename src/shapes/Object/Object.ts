@@ -47,7 +47,7 @@ import type { SerializedObjectProps } from './types/SerializedObjectProps';
 import type { ObjectProps } from './types/ObjectProps';
 import { getDevicePixelRatio, getEnv } from '../../env';
 import { log } from '../../util/internals/console';
-import { BBox } from './BBox';
+import { BBox } from '../../BBox/BBox';
 
 export type TCachedFabricObject<T extends FabricObject = FabricObject> = T &
   Required<

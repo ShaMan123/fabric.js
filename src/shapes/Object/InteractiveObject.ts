@@ -10,7 +10,7 @@ import type { TFabricObjectProps, SerializedObjectProps } from './types';
 import { createObjectDefaultControls } from '../../controls/commonControls';
 import { interactiveObjectDefaultValues } from './defaultValues';
 import { mapValues } from '../../util/internals';
-import { BBox } from './BBox';
+import { BBox } from '../../BBox/BBox';
 
 type TControlCoord = {
   position: Point;

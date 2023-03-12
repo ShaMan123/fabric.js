@@ -16,10 +16,9 @@ import {
 } from '../../util/misc/matrix';
 import type { ControlProps } from './types/ControlProps';
 import { getUnitVector, rotateVector } from '../../util/misc/vectors';
-import { BBox } from './BBox';
 import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
-import { TRotatedBBox } from './BBox';
-import { CanvasBBox } from './BBox';
+import { BBox, TRotatedBBox } from '../../BBox/BBox';
+import { CanvasBBox } from '../../BBox/CanvasBBox';
 import { ObjectLayout } from './ObjectLayout';
 import { FillStrokeProps } from './types/FillStrokeProps';
 
