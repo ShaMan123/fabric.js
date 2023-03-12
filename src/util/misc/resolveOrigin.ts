@@ -1,4 +1,7 @@
 import type { TOriginX, TOriginY } from '../../typedefs';
+import { Point } from '../../Point';
+
+export type OriginDescriptor = { x: TOriginX; y: TOriginY };
 
 const originOffset = {
   left: -0.5,
@@ -20,3 +23,6 @@ export const resolveOrigin = (
   typeof originValue === 'string'
     ? originOffset[originValue]
     : originValue - 0.5;
+
+export const resolveOriginPoint = ({ x, y }: OriginDescriptor) =>
+  new Point(resolveOrigin(x), resolveOrigin(y));
