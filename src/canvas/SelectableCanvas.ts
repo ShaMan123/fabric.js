@@ -24,7 +24,6 @@ import type {
   TSize,
   TSVGReviver,
 } from '../typedefs';
-import { degreesToRadians } from '../util/misc/radiansDegreesConversion';
 import { getPointer, isTouchEvent } from '../util/dom_event';
 import type { IText } from '../shapes/IText/IText';
 import type { BaseBrush } from '../brushes/BaseBrush';
@@ -37,6 +36,7 @@ import type { CanvasOptions } from './CanvasOptions';
 import { canvasDefaults } from './CanvasOptions';
 import { Intersection } from '../Intersection';
 import { isActiveSelection } from '../util/typeAssertions';
+import { calcPlaneRotation } from '../util/misc/matrix';
 
 /**
  * Canvas class
@@ -606,6 +606,10 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
         actionHandler,
         actionPerformed: false,
         corner,
+        scenePoint: this.getScenePoint(e),
+        viewportPoint: this.getViewportPoint(e),
+        canvas: this,
+
         scaleX: target.scaleX,
         scaleY: target.scaleY,
         skewX: target.skewX,
@@ -618,7 +622,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
         ey: pointer.y,
         lastX: pointer.x,
         lastY: pointer.y,
-        theta: degreesToRadians(target.angle),
+        theta: calcPlaneRotation(target.calcTransformMatrix()),
         width: target.width,
         height: target.height,
         shiftKey: e.shiftKey,
