@@ -79,6 +79,7 @@ export const factoryPolyActionHandler = (
     x: number,
     y: number
   ) {
+    // @TODO revisit and change plane!
     const poly = transform.target as Polyline,
       anchorPoint = new Point(
         poly.points[(pointIndex > 0 ? pointIndex : poly.points.length) - 1]

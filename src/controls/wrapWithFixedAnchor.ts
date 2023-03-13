@@ -1,6 +1,4 @@
 import type { Transform, TransformActionHandler } from '../EventTypeDefs';
-import { Point } from '../Point';
-import { resolveOrigin } from '../util/misc/resolveOrigin';
 
 /**
  * Wrap an action handler with saving/restoring object position on the transform.
@@ -12,14 +10,10 @@ export function wrapWithFixedAnchor<T extends Transform>(
   actionHandler: TransformActionHandler<T>
 ) {
   return ((eventData, transform, x, y) => {
-    const { target, originX, originY } = transform;
-    const origin = new Point(resolveOrigin(originX), resolveOrigin(originY));
-    const constraint = target.bbox.pointFromOrigin(origin),
-      actionPerformed = actionHandler(eventData, transform, x, y),
-      delta = target.bbox.pointFromOrigin(origin).subtract(constraint),
-      originDiff = target.bbox.sendToParent().vectorToOrigin(delta);
-    // @TODO revisit to use setRelativeCenterPoint
-    target.set({ left: target.left + delta.x, top: target.top + delta.y });
+    const { target, originX, originY } = transform,
+      constraint = target.getXY(originX, originY),
+      actionPerformed = actionHandler(eventData, transform, x, y);
+    target.setXY(constraint, originX, originY);
     return actionPerformed;
   }) as TransformActionHandler<T>;
 }

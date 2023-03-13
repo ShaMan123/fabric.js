@@ -4,7 +4,14 @@ import { iMatrix } from '../../constants';
 import { ObjectEvents } from '../../EventTypeDefs';
 import { Intersection } from '../../Intersection';
 import { Point } from '../../Point';
-import type { TAxis, TBBox, TDegree, TMat2D } from '../../typedefs';
+import type {
+  TAxis,
+  TBBox,
+  TDegree,
+  TMat2D,
+  TOriginX,
+  TOriginY,
+} from '../../typedefs';
 import { mapValues } from '../../util/internals';
 import {
   calcPlaneRotation,
@@ -21,6 +28,7 @@ import { BBox, TRotatedBBox } from '../../BBox/BBox';
 import { CanvasBBox } from '../../BBox/CanvasBBox';
 import { ObjectLayout } from './ObjectLayout';
 import { FillStrokeProps } from './types/FillStrokeProps';
+import { resolveOriginPoint } from '../../util/misc/resolveOrigin';
 
 type TMatrixCache = {
   key: string;
@@ -209,6 +217,78 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
 
   /**
    * @return {Point[]} [tl, tr, br, bl] in the scene plane
+   * @returns {number} x position according to object's {@link originX} property in canvas coordinate plane
+   */
+  getX(originX: TOriginX = this.originX): number {
+    return this.getXY(originX).x;
+  }
+
+  /**
+   * @param {number} value x position according to object's {@link originX} property in canvas coordinate plane
+   */
+  setX(value: number, originX: TOriginX = this.originX) {
+    this.setXY(this.getXY(originX).setX(value));
+  }
+
+  /**
+   * @returns {number} y position according to object's {@link originY} property in canvas coordinate plane
+   */
+  getY(originY: TOriginY = this.originY): number {
+    return this.getXY(undefined, originY).y;
+  }
+
+  /**
+   * @param {number} value y position according to object's {@link originY} property in canvas coordinate plane
+   */
+  setY(value: number, originY: TOriginY = this.originY) {
+    this.setXY(this.getXY(undefined, originY).setY(value));
+  }
+
+  /**
+   * @returns {Point} x position according to object's {@link originX} {@link originY} properties in canvas coordinate plane
+   */
+  getXY(
+    originX: TOriginX = this.originX,
+    originY: TOriginY = this.originY
+  ): Point {
+    return this.bbox.pointFromOrigin(
+      resolveOriginPoint({ x: originX, y: originY })
+    );
+  }
+
+  /**
+   * Set an object position to a particular point, the point is intended in absolute ( canvas ) coordinate.
+   * You can specify {@link originX} and {@link originY} values,
+   * that otherwise are the object's current values.
+   * @example <caption>Set object's bottom left corner to point (5,5) on canvas</caption>
+   * object.setXY(new Point(5, 5), 'left', 'bottom').
+   * @param {Point} point position in canvas coordinate plane
+   * @param {TOriginX} [originX] Horizontal origin: 'left', 'center' or 'right'
+   * @param {TOriginY} [originY] Vertical origin: 'top', 'center' or 'bottom'
+   */
+  setXY(
+    point: Point,
+    originX: TOriginX = 'center',
+    originY: TOriginY = 'center'
+  ) {
+    const delta = this.bbox.getOriginTranslationInParent(
+      point,
+      resolveOriginPoint({ x: originX, y: originY })
+    );
+    this.set({
+      left: this.left + delta.x,
+      top: this.top + delta.y,
+    });
+    this.setCoords();
+  }
+
+  /**
+   * Checks if object intersects with an area formed by 2 points
+   * @param {Object} pointTL top-left point of area
+   * @param {Object} pointBR bottom-right point of area
+   * @param {Boolean} [absolute] use coordinates without viewportTransform
+   * @param {Boolean} [calculate] use coordinates of current position instead of stored one
+   * @return {Boolean} true if object intersects with an area formed by 2 points
    */
   getCoords(): Point[] {
     return (this.bbox || (this.bbox = BBox.rotated(this))).getCoords();
@@ -347,6 +427,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   /**
    * @param {TDegree} angle Angle value (in degrees)
    * @deprecated avoid decomposition
+   * @returns own decomposed angle
    */
   rotate(angle: TDegree) {
     const origin = this.centeredRotation ? this.getCenterPoint() : this.getXY();
@@ -361,6 +442,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     this.set({ angle: decomposedAngle });
     this.centeredRotation ? this.setCenterPoint(origin) : this.setXY(origin);
     this.setCoords();
+    return decomposedAngle;
   }
 
   scaleAxisTo(axis: TAxis, value: number, inViewport: boolean) {
