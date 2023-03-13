@@ -44,6 +44,7 @@ import type { StaticCanvasOptions } from './StaticCanvasOptions';
 import { staticCanvasDefaults } from './StaticCanvasOptions';
 import { log, FabricError } from '../util/internals/console';
 import { getDevicePixelRatio } from '../env';
+import { CanvasBBox } from '../BBox/CanvasBBox';
 
 /**
  * Having both options in TCanvasSizeOptions set to true transform the call in a calcOffset
@@ -618,9 +619,12 @@ export class StaticCanvas<
    * @param {Array} objects to render
    */
   _renderObjects(ctx: CanvasRenderingContext2D, objects: FabricObject[]) {
+    const canvasBBox = CanvasBBox.bbox(this);
     objects.forEach((object) => {
       object &&
-        (!this.skipOffscreen || !object.skipOffscreen || object.isOnScreen()) &&
+        (!this.skipOffscreen ||
+          !object.skipOffscreen ||
+          canvasBBox.overlaps(object.bbox)) &&
         object.render(ctx);
     });
   }

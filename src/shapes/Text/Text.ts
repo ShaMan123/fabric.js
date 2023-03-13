@@ -1682,20 +1682,7 @@ export class FabricText<
    * @param {CanvasRenderingContext2D} ctx Context to render on
    */
   render(ctx: CanvasRenderingContext2D) {
-    if (!this.visible) {
-      return;
-    }
-    if (
-      this.canvas &&
-      this.canvas.skipOffscreen &&
-      !this.group &&
-      !this.isOnScreen()
-    ) {
-      return;
-    }
-    if (this._forceClearCache) {
-      this.initDimensions();
-    }
+    this._forceClearCache && this.initDimensions();
     super.render(ctx);
   }
 

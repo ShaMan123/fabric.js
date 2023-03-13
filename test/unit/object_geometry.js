@@ -282,34 +282,6 @@
     assert.equal(cObj.bboxCoords.br.y, 250, 'bboxCoords do not interfere with viewportTransform');
   });
 
-  QUnit.test('isOnScreen', function(assert) {
-    var cObj = new fabric.Object({ left: 50, top: 50, width: 100, height: 100, strokeWidth: 0});
-    canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
-    cObj.canvas = canvas;
-    cObj.invalidateCoords();
-    assert.ok(cObj.isOnScreen(), 'object is onScreen');
-    cObj.top = 1000;
-    assert.ok(cObj.isOnScreen(), 'object is still wrongly on screen since invalidateCoords is not called and calculate is not set, even when top is already at 1000');
-    cObj.invalidateCoords();
-    assert.ok(!cObj.isOnScreen(), 'object is not onScreen with top 1000');
-    canvas.setZoom(0.1);
-    assert.ok(cObj.isOnScreen(), 'zooming out the object is again on screen');
-  });
-
-  QUnit.test('isOnScreen flipped vpt', function (assert) {
-    var cObj = new fabric.Object({ left: -50, top: -50, width: 100, height: 100, strokeWidth: 0 });
-    canvas.viewportTransform = [-1, 0, 0, -1, 0, 0];
-    cObj.canvas = canvas;
-    cObj.invalidateCoords();
-    assert.ok(cObj.isOnScreen(), 'object is onScreen');
-    cObj.top = 1000;
-    assert.ok(cObj.isOnScreen(), 'object is still wrongly on screen since invalidateCoords is not called and calculate is not set, even when top is already at 1000');
-    cObj.invalidateCoords();
-    assert.ok(!cObj.isOnScreen(), 'object is not onScreen with top 1000');
-    canvas.setZoom(0.1);
-    assert.ok(cObj.isOnScreen(), 'zooming out the object is again on screen');
-  });
-
   QUnit.test('transformMatrixKey depends from properties', function(assert) {
     var cObj = new fabric.Object(
       { left: -10, top: -10, width: 30, height: 40, strokeWidth: 0});
@@ -338,31 +310,6 @@
     assert.notEqual(key1, key2, 'keys are different origins 1');
     assert.notEqual(key1, key3, 'keys are different origins 2');
     assert.notEqual(key2, key3, 'keys are different origins 3');
-  });
-
-  QUnit.test('isOnScreen with object that include canvas', function(assert) {
-    var cObj = new fabric.Object(
-      { left: -10, top: -10, width: canvas.getWidth() + 100, height: canvas.getHeight(), strokeWidth: 0});
-    canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
-    cObj.canvas = canvas;
-    cObj.invalidateCoords();
-    assert.equal(cObj.isOnScreen(), true, 'object is onScreen because it include the canvas');
-    cObj.top = -1000;
-    cObj.left = -1000;
-    cObj.invalidateCoords();
-    assert.equal(cObj.isOnScreen(), false, 'object is completely out of viewport');
-  });
-
-  QUnit.test('isOnScreen with object that is in top left corner of canvas', function(assert) {
-    var cObj = new fabric.Rect({left: -46.56, top: -9.23, width: 50,height: 50, angle: 314.57});
-    canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
-    cObj.canvas = canvas;
-    cObj.invalidateCoords();
-    assert.ok(cObj.isOnScreen(), 'object is onScreen because it intersect a canvas line');
-    cObj.top -= 20;
-    cObj.left -= 20;
-    cObj.invalidateCoords();
-    assert.ok(!cObj.isOnScreen(), 'object is completely out of viewport');
   });
 
   QUnit.test('calcTransformMatrix with no group', function(assert) {

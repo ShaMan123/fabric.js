@@ -61,12 +61,12 @@ export class BBox extends ViewportBBox {
 
   // preMultiply(transform: TMat2D) {
   //   const parent = this.planes.parent();
-  //   const ownPreTransform = multiplyTransformMatrixChain([
+  //   const ownPreTransform = multiplyTransformMatrixArray([
   //     invertTransform(parent),
   //     transform,
   //     parent,
   //   ]);
-  //   const self = multiplyTransformMatrixChain([
+  //   const self = multiplyTransformMatrixArray([
   //     parent,
   //     this.getOwnTransform(),
   //     ownPreTransform,
