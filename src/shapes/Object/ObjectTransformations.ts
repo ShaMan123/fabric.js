@@ -83,17 +83,28 @@ export class ObjectTransformations<
   }
 
   /**
+   * Rotates object to angle
    * @param {TDegree} angle Angle value (in degrees)
    * @returns own decomposed angle
    * @deprecated avoid decomposition, use {@link ObjectTransformations} instead
    */
   rotate(angle: TDegree) {
+    return this.rotateBy(
+      angle - radiansToDegrees(calcPlaneRotation(this.calcTransformMatrix()))
+    );
+  }
+
+  /**
+   * Rotates object by angle
+   * @param {TDegree} angle Angle value (in degrees)
+   * @returns own decomposed angle
+   */
+  rotateBy(angle: TDegree) {
     const origin = this.centeredRotation ? this.getCenterPoint() : this.getXY();
-    const m = this.calcTransformMatrix();
     const t = multiplyTransformMatrixArray([
       this.group && invertTransform(this.group.calcTransformMatrix()),
-      createRotateMatrix({ angle: angle - calcPlaneRotation(m) }),
-      m,
+      createRotateMatrix({ angle }),
+      this.calcTransformMatrix(),
     ]);
     const ownAngle = radiansToDegrees(calcPlaneRotation(t));
     this.set({ angle: ownAngle });
