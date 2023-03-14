@@ -14,13 +14,9 @@ import {
   multiplyTransformMatrixArray,
   invertTransform,
   createRotateMatrix,
-  calcPlaneRotation,
 } from '../../util/misc/matrix';
 import { ObjectPosition } from './ObjectPosition';
-import {
-  degreesToRadians,
-  radiansToDegrees,
-} from '../../util/misc/radiansDegreesConversion';
+import { degreesToRadians } from '../../util/misc/radiansDegreesConversion';
 import { applyTransformToObject } from '../../util/misc/objectTransforms';
 
 type ObjectTransformOptions = {
@@ -181,16 +177,13 @@ export class ObjectTransformations<
    * @returns own transform
    */
   rotate(angle: TDegree, options?: ObjectTransformOptions) {
-    const rotation = calcPlaneRotation(
-      options?.inViewport
-        ? multiplyTransformMatrices(
-            this.getViewportTransform(),
-            this.calcTransformMatrix()
-          )
-        : this.calcTransformMatrix()
+    return this.transformObject(
+      createRotateMatrix({
+        // @TODO: support options?.inViewport
+        rotation: degreesToRadians(angle) - this.bbox.getRotation(),
+      }),
+      options
     );
-
-    return this.rotateBy(angle - radiansToDegrees(rotation), options);
   }
 
   /**
