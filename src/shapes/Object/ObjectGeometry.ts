@@ -1,10 +1,9 @@
-import { CanvasBBox } from '../../BBox/CanvasBBox';
 import { ObjectEvents } from '../../EventTypeDefs';
-import { Intersection } from '../../Intersection';
 import { Point } from '../../Point';
 import type { TBBox } from '../../typedefs';
 import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 import { ObjectTransformations } from './ObjectTransformations';
+import { ViewportBBox } from '../../BBox/ViewportBBox';
 
 export class ObjectGeometry<
   EventSpec extends ObjectEvents = ObjectEvents
@@ -92,8 +91,11 @@ export class ObjectGeometry<
    * @return {Boolean} true if object is fully or partially contained within canvas
    * @deprecated move to canvas
    */
-  isOnScreen(): boolean | undefined {
-    return this.canvas && CanvasBBox.bbox(this.canvas).overlaps(this.bbox);
+  isOnScreen(): boolean {
+    if (!this.canvas) {
+      return false;
+    }
+    return ViewportBBox.canvas(this.canvas).overlaps(this.bbox);
   }
 
   /**
@@ -105,7 +107,7 @@ export class ObjectGeometry<
     if (!this.canvas) {
       return undefined;
     }
-    const bbox = CanvasBBox.bbox(this.canvas);
+    const bbox = ViewportBBox.canvas(this.canvas);
     return bbox.intersects(this.bbox) || bbox.isContainedBy(this.bbox);
   }
 
