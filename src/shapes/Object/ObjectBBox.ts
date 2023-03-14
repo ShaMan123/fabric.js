@@ -56,6 +56,13 @@ export class ObjectBBox<EventSpec extends ObjectEvents = ObjectEvents>
     return this.canvas?.viewportTransform || (iMatrix.concat() as TMat2D);
   }
 
+  calcTransformMatrixInViewport() {
+    return multiplyTransformMatrices(
+      this.getViewportTransform(),
+      this.calcTransformMatrix()
+    );
+  }
+
   protected calcDimensionsVector(
     origin = new Point(1, 1),
     {
