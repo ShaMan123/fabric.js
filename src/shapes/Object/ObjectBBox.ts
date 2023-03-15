@@ -67,8 +67,10 @@ export class ObjectBBox<EventSpec extends ObjectEvents = ObjectEvents>
     origin = new Point(1, 1),
     {
       applyViewportTransform = this.needsViewportCoords(),
+      transform = this.calcTransformMatrix(),
     }: {
       applyViewportTransform?: boolean;
+      transform?: TMat2D;
     } = {}
   ) {
     const dimVector = origin
@@ -76,10 +78,7 @@ export class ObjectBBox<EventSpec extends ObjectEvents = ObjectEvents>
       .add(origin.scalarMultiply(!this.strokeUniform ? this.strokeWidth : 0))
       .transform(
         applyViewportTransform
-          ? multiplyTransformMatrices(
-              this.getViewportTransform(),
-              this.calcTransformMatrix()
-            )
+          ? this.calcTransformMatrixInViewport()
           : this.calcTransformMatrix(),
         true
       );
