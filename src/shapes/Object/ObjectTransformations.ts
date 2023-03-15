@@ -216,7 +216,7 @@ export class ObjectTransformations<
     ).getCoords();
     return this.shearSides(
       [createVector(tl, tr), createVector(tl, bl)],
-      [x, y],
+      [y, x],
       options
     );
   }
@@ -231,14 +231,14 @@ export class ObjectTransformations<
         getUnitVector(createVector(tl, tr)),
         getUnitVector(createVector(tl, bl)),
       ],
-      [x, y],
+      [y, x],
       options
     );
   }
 
   protected shearSides(
     [vx, vy]: [Point, Point],
-    [x, y]: [number, number],
+    [y, x]: [number, number],
     options?: ObjectTransformOptions
   ) {
     const xVector = getUnitVector(vx);
