@@ -11,6 +11,7 @@ import type {
 } from '../../typedefs';
 import {
   invertTransform,
+  isMatrixEqual,
   multiplyTransformMatrices,
   createRotateMatrix,
   multiplyTransformMatrixArray,
@@ -99,7 +100,7 @@ export class ObjectTransformations<
    * Transforms object with respect to origin
    * @param transform
    * @param param1 options
-   * @returns own transform
+   * @returns true if transform has changed
    */
   transformObjectInPlane(
     transform: TMat2D,
@@ -126,17 +127,23 @@ export class ObjectTransformations<
       plane,
       this.calcOwnMatrix(),
     ]);
-    // TODO: stop using decomposed values in favor of a matrix
-    applyTransformToObject(this, ownTransform);
-    this.setCoords();
-    return this.calcOwnMatrix();
+
+    if (!isMatrixEqual(ownTransform, this.calcOwnMatrix())) {
+      // TODO: stop using decomposed values in favor of a matrix
+      applyTransformToObject(this, ownTransform);
+      this.setCoords();
+      this.group?._set('dirty', true);
+      return true;
+    }
+
+    return false;
   }
 
   /**
    * Transforms object with respect to origin
    * @param transform
    * @param param1 options
-   * @returns own transform
+   * @returns true if transform has changed
    */
   transformObject(
     transform: TMat2D,
@@ -214,13 +221,6 @@ export class ObjectTransformations<
     );
   }
 
-  /**
-   * @todo this is far from perfect when dealing with rotation
-   * @param x
-   * @param y
-   * @param options
-   * @returns
-   */
   shearBy(x: number, y: number, options?: ObjectTransformOptions) {
     const bbox = BBox.transformed(this);
     const { tl, tr, bl } = (
@@ -260,7 +260,7 @@ export class ObjectTransformations<
   /**
    * Rotates object to angle
    * @param {TDegree} angle Angle value (in degrees)
-   * @returns own transform
+   * @returns true if transform has changed
    */
   rotate(angle: TDegree, options?: ObjectTransformOptions) {
     return this.transformObject(
@@ -279,7 +279,7 @@ export class ObjectTransformations<
   /**
    * Rotates object by angle
    * @param {TDegree} angle Angle value (in degrees)
-   * @returns own transform
+   * @returns true if transform has changed
    */
   rotateBy(angle: TDegree, options?: ObjectTransformOptions) {
     return this.transformObject(createRotateMatrix({ angle }), options);
