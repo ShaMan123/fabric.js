@@ -195,14 +195,15 @@ export class ObjectTransformations<
   }
 
   shear(x: number, y: number, options?: ObjectTransformOptions) {
-    const rotation = createRotateMatrix({
-      rotation: this.bbox.getRotation(),
-    });
-    const [a, b, c, d] = multiplyTransformMatrices(
-      invertTransform(rotation),
-      this.calcTransformMatrix(),
-      true
-    );
+    // const rotation = createRotateMatrix({
+    //   rotation: this.bbox.getRotation(),
+    // });
+    // const [a, b, c, d] = multiplyTransformMatrices(
+    //   invertTransform(rotation),
+    //   this.calcTransformMatrix(),
+    //   true
+    // );
+    const [a, b, c, d] = this.calcTransformMatrix();
     return this.transformObject(
       multiplyTransformMatrices(
         [a, y, x, d, 0, 0],
