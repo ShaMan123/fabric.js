@@ -1277,45 +1277,33 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {Event} e Event fired on mousemove
    */
   _transformObject(e: TPointerEvent) {
-    const scenePoint = this.getScenePoint(e),
-      transform = this._currentTransform!,
-      target = transform.target,
-      //  transform pointer to target's containing coordinate plane
-      //  both pointer and object should agree on every point
-      localPointer = target.group
-        ? sendPointToPlane(
-            scenePoint,
-            undefined,
-            target.group.calcTransformMatrix()
-          )
-        : scenePoint;
-    transform.shiftKey = e.shiftKey;
-    transform.altKey = !!this.centeredKey && e[this.centeredKey];
-
-    this._performTransformAction(e, transform, localPointer);
-    transform.actionPerformed && this.requestRenderAll();
+    this._performTransformAction(
+      e,
+      Object.assign(this._currentTransform!, {
+        shiftKey: e.shiftKey,
+        altKey: !!this.centeredKey && e[this.centeredKey],
+      })
+    ) && this.requestRenderAll();
   }
 
   /**
    * @private
    */
-  _performTransformAction(
-    e: TPointerEvent,
-    transform: Transform,
-    pointer: Point
-  ) {
-    const { action, actionHandler, target } = transform;
-
-    const actionPerformed =
-      !!actionHandler && actionHandler(e, transform, pointer.x, pointer.y);
-
-    actionPerformed && target.invalidateCoords();
-
+  _performTransformAction(e: TPointerEvent, transform: Transform) {
+    const { target, action, actionHandler } = transform;
+    let actionPerformed = false;
+    if (actionHandler) {
+      const pointer = this.getPointer(e);
+      actionPerformed = actionHandler(e, transform, pointer.x, pointer.y);
+      transform.lastX = pointer.x;
+      transform.lastY = pointer.y;
+    }
     if (action === 'drag' && actionPerformed) {
       target.isMoving = true;
       this.setCursor(target.moveCursor || this.moveCursor);
     }
-    transform.actionPerformed = transform.actionPerformed || actionPerformed;
+    return (transform.actionPerformed =
+      transform.actionPerformed || actionPerformed);
   }
 
   /**
