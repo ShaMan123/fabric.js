@@ -1293,7 +1293,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
     const { target, action, actionHandler } = transform;
     let actionPerformed = false;
     if (actionHandler) {
-      const pointer = this.getPointer(e);
+      const pointer = this.getViewportPoint(e);
       actionPerformed = actionHandler(e, transform, pointer.x, pointer.y);
       transform.lastX = pointer.x;
       transform.lastY = pointer.y;
