@@ -59,11 +59,18 @@ export const getUnitVector = (v: Point): Point =>
  * @param {Boolean} [counterClockwise] the direction of the orthogonal vector, defaults to `true`
  * @returns {Point} the unit orthogonal vector
  */
+export const getOrthogonalVector = (v: Point, counterClockwise = true): Point =>
+  new Point(-v.y, v.x).scalarMultiply(counterClockwise ? 1 : -1);
+
+/**
+ * @param {Point} v
+ * @param {Boolean} [counterClockwise] the direction of the orthogonal vector, defaults to `true`
+ * @returns {Point} the unit orthogonal vector
+ */
 export const getOrthonormalVector = (
   v: Point,
   counterClockwise = true
-): Point =>
-  getUnitVector(new Point(-v.y, v.x).scalarMultiply(counterClockwise ? 1 : -1));
+): Point => getUnitVector(getOrthogonalVector(v, counterClockwise));
 
 /**
  * Cross product of two vectors in 2D
