@@ -1049,14 +1049,11 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
       if (target.selectable && target.activeOn === 'down') {
         this.setActiveObject(target, e);
       }
-      const handle = target.findControl(
-        this.getViewportPoint(e),
-        isTouchEvent(e)
-      );
+      const viewportPoint = this.getViewportPoint(e);
+      const handle = target.findControl(viewportPoint, isTouchEvent(e));
       if (target === this._activeObject && (handle || !grouped)) {
         this._setupCurrentTransform(e, target, alreadySelected);
         const control = handle ? handle.control : undefined,
-          pointer = this.getScenePoint(e),
           mouseDownHandler =
             control && control.getMouseDownHandler(e, target, control);
         mouseDownHandler &&
@@ -1064,8 +1061,8 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
             control,
             e,
             this._currentTransform!,
-            pointer.x,
-            pointer.y
+            viewportPoint.x,
+            viewportPoint.y
           );
       }
     }

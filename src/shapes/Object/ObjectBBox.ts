@@ -39,7 +39,9 @@ export class ObjectBBox<EventSpec extends ObjectEvents = ObjectEvents>
    * Override this method if needed
    */
   needsViewportCoords() {
-    return (this.strokeUniform && this.strokeWidth > 0) || !!this.padding;
+    // not working yet
+    return true;
+    // return (this.strokeUniform && this.strokeWidth > 0) || !!this.padding;
   }
 
   getCanvasRetinaScaling() {
@@ -105,7 +107,7 @@ export class ObjectBBox<EventSpec extends ObjectEvents = ObjectEvents>
       offset.add(origin.scalarMultiply(padding * 2)),
       calcPlaneRotation(
         applyViewportTransform
-          ? multiplyTransformMatrices(vpt, this.calcTransformMatrix())
+          ? this.calcTransformMatrixInViewport()
           : this.calcTransformMatrix()
       )
     );

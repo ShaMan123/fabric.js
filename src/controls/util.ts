@@ -86,7 +86,7 @@ export function findCornerQuadrant(
   //  angle is relative to canvas plane but should be to the viewport
   const angle = calcPlaneRotation(fabricObject.calcTransformMatrix()),
     cornerAngle =
-      angle + radiansToDegrees(Math.atan2(control.y, control.x)) + 360;
+      radiansToDegrees(angle + Math.atan2(control.y, control.x)) + 360;
   return Math.round((cornerAngle % 360) / 45);
 }
 
@@ -99,6 +99,7 @@ function normalizePoint(
   originX: TOriginX,
   originY: TOriginY
 ): Point {
+  // @TODO: all this looks wrong
   const rotation = calcPlaneRotation(target.calcTransformMatrix());
   const p = sendPointToPlane(
     target.getXY(originX, originY),

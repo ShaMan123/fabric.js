@@ -1,6 +1,7 @@
 import { twoMathPi } from '../constants';
 import type { InteractiveFabricObject } from '../shapes/Object/InteractiveObject';
 import { calcPlaneRotation } from '../util/misc/matrix';
+import type { FabricObject } from '../shapes/Object/FabricObject';
 import type { Control } from './Control';
 
 export type ControlRenderingStyleOverride = Partial<

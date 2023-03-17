@@ -596,9 +596,9 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
       origin = this._shouldCenterTransform(target, action, altKey)
         ? ({ x: CENTER, y: CENTER } as const)
         : this._getOriginFromCorner(target, corner),
+      offset = pointer.subtract(target.getXY('left', 'top')),
       /**
-       * relative to target's containing coordinate plane
-       * both agree on every point
+       * relative to viewport
        **/
       transform: Transform = {
         target: target,
@@ -606,16 +606,12 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
         actionHandler,
         actionPerformed: false,
         corner,
-        scenePoint: this.getScenePoint(e),
-        viewportPoint: this.getViewportPoint(e),
-        canvas: this,
-
         scaleX: target.scaleX,
         scaleY: target.scaleY,
         skewX: target.skewX,
         skewY: target.skewY,
-        offsetX: pointer.x - target.left,
-        offsetY: pointer.y - target.top,
+        offsetX: offset.x,
+        offsetY: offset.x,
         originX: origin.x,
         originY: origin.y,
         ex: pointer.x,
