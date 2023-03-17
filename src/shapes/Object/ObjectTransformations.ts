@@ -109,19 +109,21 @@ export class ObjectTransformations<
     }: ObjectTransformOptions = {}
   ) {
     const ownTransformBefore = this.calcOwnMatrix();
-    const plane = this.group?.calcTransformMatrix() || iMatrix;
-    const vpt = inViewport ? this.getViewportTransform() : iMatrix;
     const transformCenter = (
       inViewport ? this.bbox : this.bbox.sendToCanvas()
     ).pointFromOrigin(resolveOriginPoint(originX, originY));
-    const ownTransformAfter = multiplyTransformMatrixArray([
-      invertTransform(plane),
-      invertTransform(vpt),
-      [1, 0, 0, 1, transformCenter.x, transformCenter.y],
-      transform,
+    const ownToTransformPlaneChange = multiplyTransformMatrixArray([
       [1, 0, 0, 1, -transformCenter.x, -transformCenter.y],
-      vpt,
-      plane,
+      inViewport ? this.getViewportTransform() : iMatrix,
+      this.group?.calcTransformMatrix() || iMatrix,
+    ]);
+    const transformToOwnPlaneChange = invertTransform(
+      ownToTransformPlaneChange
+    );
+    const ownTransformAfter = multiplyTransformMatrixArray([
+      transformToOwnPlaneChange,
+      transform,
+      ownToTransformPlaneChange,
       ownTransformBefore,
     ]);
 
@@ -130,11 +132,7 @@ export class ObjectTransformations<
       applyTransformToObject(this, ownTransformAfter);
       this.setCoords();
       if (this.group) {
-        this.group._applyLayoutStrategy({
-          type: 'object_modified',
-          target: this,
-          prevTransform: ownTransformBefore,
-        });
+        this.group.triggerLayout();
         this.group._set('dirty', true);
       }
       return true;
