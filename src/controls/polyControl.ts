@@ -53,7 +53,7 @@ export const polyActionHandler = (
   y: number
 ) => {
   const { target, pointIndex } = transform;
-  const poly = target as Polyline;
+  const poly = target as unknown as Polyline;
   const mouseLocalPosition = sendPointToPlane(
     new Point(x, y),
     undefined,

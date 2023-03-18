@@ -74,15 +74,17 @@ export class ObjectTransformations<
   setDimensions(size: Point, inViewport = false) {
     const strokeVector = this.bbox
       .sendToSelf()
-      .getDimensionsVector()
+      .getBBoxVector()
       .subtract(this.getDimensionsVectorForLayout());
-    const { x, y } = sendVectorToPlane(
+    const ownSize = sendVectorToPlane(
       size,
       inViewport ? this.getViewportTransform() : undefined,
       this.calcTransformMatrix()
     ).subtract(strokeVector);
-    this.set({ width: x, height: y });
+    // console.log(strokeVector);
+    this.set({ width: ownSize.x, height: ownSize.y });
     this.setCoords();
+    return ownSize;
   }
 
   /**
@@ -186,7 +188,7 @@ export class ObjectTransformations<
    * @return {Number} width value
    */
   getScaledWidth(): number {
-    return BBox.transformed(this).sendToCanvas().getDimensionsVector().x;
+    return BBox.transformed(this).sendToCanvas().getBBoxVector().x;
   }
 
   /**
@@ -196,17 +198,15 @@ export class ObjectTransformations<
    * @return {Number} height value
    */
   getScaledHeight(): number {
-    return BBox.transformed(this).sendToCanvas().getDimensionsVector().y;
+    return BBox.transformed(this).sendToCanvas().getBBoxVector().y;
   }
 
   protected scaleAxisTo(axis: TAxis, value: number, absolute = true) {
     // adjust to bounding rect factor so that rotated shapes would fit as well
-    const transformed = BBox.transformed(this)
-      .sendToCanvas()
-      .getDimensionsVector();
+    const transformed = BBox.transformed(this).sendToCanvas().getBBoxVector();
     const rotated = (
       absolute ? this.bbox.sendToCanvas() : this.bbox
-    ).getDimensionsVector();
+    ).getBBoxVector();
     const boundingRectFactor = rotated[axis] / transformed[axis];
     const scale =
       value / new Point(this.width, this.height)[axis] / boundingRectFactor;
