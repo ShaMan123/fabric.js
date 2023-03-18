@@ -4,13 +4,12 @@ import type {
   TransformAction,
   BasicTransformEvent,
 } from '../EventTypeDefs';
-import { resolveOrigin } from '../util/misc/resolveOrigin';
+import { resolveOrigin, resolveOriginPoint } from '../util/misc/resolveOrigin';
 import { Point } from '../Point';
 import type { FabricObject } from '../shapes/Object/FabricObject';
 import type { TOriginX, TOriginY } from '../typedefs';
 import { radiansToDegrees } from '../util/misc/radiansDegreesConversion';
 import type { Control } from './Control';
-import { CENTER } from '../constants';
 import { calcPlaneRotation } from '../util/misc/matrix';
 import { sendPointToPlane } from '../util/misc/planeChange';
 
@@ -40,8 +39,14 @@ export const getActionFromCorner = (
  * @param {Object} transform transform data
  * @return {Boolean} true if transform is centered
  */
-export function isTransformCentered(transform: Transform) {
-  return transform.originX === CENTER && transform.originY === CENTER;
+export function isTransformCentered({
+  originX,
+  originY,
+}: {
+  originX: TOriginX;
+  originY: TOriginY;
+}) {
+  return resolveOriginPoint(originX, originY).eq(new Point());
 }
 
 export function invertOrigin(origin: TOriginX | TOriginY) {
