@@ -17,13 +17,7 @@ import type { TCanvasSizeOptions } from './StaticCanvas';
 import { StaticCanvas } from './StaticCanvas';
 import { isCollection } from '../Collection';
 import { isTransparent } from '../util/misc/isTransparent';
-import type {
-  TMat2D,
-  TOriginX,
-  TOriginY,
-  TSize,
-  TSVGReviver,
-} from '../typedefs';
+import type { TMat2D, TSize, TSVGReviver } from '../typedefs';
 import { getPointer, isTouchEvent } from '../util/dom_event';
 import type { IText } from '../shapes/IText/IText';
 import type { BaseBrush } from '../brushes/BaseBrush';
@@ -31,7 +25,7 @@ import { pick } from '../util/misc/pick';
 import { sendPointToPlane } from '../util/misc/planeChange';
 import { cos, createCanvasElement, sin } from '../util';
 import { CanvasDOMManager } from './DOMManagers/CanvasDOMManager';
-import { BOTTOM, CENTER, LEFT, RIGHT, TOP } from '../constants';
+import { BOTTOM, LEFT, RIGHT, TOP } from '../constants';
 import type { CanvasOptions } from './CanvasOptions';
 import { canvasDefaults } from './CanvasOptions';
 import { Intersection } from '../Intersection';
@@ -531,43 +525,6 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
   }
 
   /**
-   * Given the control clicked, determine the origin of the transform.
-   * This is bad because controls can totally have custom names
-   * should disappear before release 4.0
-   * @private
-   * @deprecated
-   */
-  _getOriginFromCorner(
-    target: FabricObject,
-    controlName: string
-  ): { x: TOriginX; y: TOriginY } {
-    const origin = {
-      x: target.originX,
-      y: target.originY,
-    };
-
-    if (!controlName) {
-      return origin;
-    }
-
-    // is a left control ?
-    if (['ml', 'tl', 'bl'].includes(controlName)) {
-      origin.x = RIGHT;
-      // is a right control ?
-    } else if (['mr', 'tr', 'br'].includes(controlName)) {
-      origin.x = LEFT;
-    }
-    // is a top control ?
-    if (['tl', 'mt', 'tr'].includes(controlName)) {
-      origin.y = BOTTOM;
-      // is a bottom control ?
-    } else if (['bl', 'mb', 'br'].includes(controlName)) {
-      origin.y = TOP;
-    }
-    return origin;
-  }
-
-  /**
    * @private
    * @param {Event} e Event object
    * @param {FabricObject} target
@@ -593,9 +550,9 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
           : dragHandler,
       action = getActionFromCorner(alreadySelected, corner, e, target),
       altKey = e[this.centeredKey as ModifierKey],
-      origin = this._shouldCenterTransform(target, action, altKey)
-        ? ({ x: CENTER, y: CENTER } as const)
-        : this._getOriginFromCorner(target, corner),
+      origin = (
+        control ? new Point(-control.x, -control.y) : new Point()
+      ).scalarAdd(0.5),
       offset = pointer.subtract(target.getXY('left', 'top')),
       /**
        * relative to viewport
