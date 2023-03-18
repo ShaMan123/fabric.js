@@ -46,6 +46,7 @@ import { isFiller } from '../../util/typeAssertions';
 import type { Gradient } from '../../gradient/Gradient';
 import type { Pattern } from '../../Pattern';
 import type { CSSRules } from '../../parser/typedefs';
+import { sizeAfterTransform } from '../../util/misc/objectTransforms';
 
 let measuringContext: CanvasRenderingContext2D | null;
 
@@ -1835,40 +1836,23 @@ export class FabricText<
       .replace(/^\s+|\s+$|\n+/g, '')
       .replace(/\s+/g, ' ');
 
-    // this code here is probably the usual issue for SVG center find
-    // this can later looked at again and probably removed.
-
-    const text = new this(textContent, {
-        left: left + dx,
-        top: top + dy,
-        underline: textDecoration.includes('underline'),
-        overline: textDecoration.includes('overline'),
-        linethrough: textDecoration.includes('line-through'),
-        // we initialize this as 0
-        strokeWidth: 0,
-        fontSize,
-        ...restOfOptions,
-      }),
-      textHeightScaleFactor = text.getScaledHeight() / text.height,
+    const text = new this(textContent, options),
+      sizeInParent = sizeAfterTransform(text.width, text.height, text),
+      textHeightScaleFactor = sizeInParent.y / text.height,
       lineHeightDiff =
         (text.height + text.strokeWidth) * text.lineHeight - text.height,
       scaledDiff = lineHeightDiff * textHeightScaleFactor,
-      textHeight = text.getScaledHeight() + scaledDiff;
+      textHeight = sizeInParent.y + scaledDiff;
 
-    let offX = 0;
-    /*
-      Adjust positioning:
-        x/y attributes in SVG correspond to the bottom-left corner of text bounding box
-        fabric output by default at top, left.
-    */
-    if (textAnchor === CENTER) {
-      offX = text.getScaledWidth() / 2;
-    }
-    if (textAnchor === RIGHT) {
-      offX = text.getScaledWidth();
-    }
     text.set({
-      left: text.left - offX,
+      // Adjust positioning:
+      // x/y attributes in SVG correspond to the bottom-left corner of text bounding box
+      // fabric output by default at top, left.
+      left:
+        text.left -
+        (textAnchor === 'center' || textAnchor === 'right'
+          ? sizeInParent.x / (textAnchor === 'center' ? 2 : 1)
+          : 0),
       top:
         text.top -
         (textHeight - text.fontSize * (0.07 + text._fontSizeFraction)) /
