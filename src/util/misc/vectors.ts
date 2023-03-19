@@ -30,14 +30,19 @@ export const createVector = (from: XY, to: XY): Point =>
  */
 export const magnitude = (point: Point) => point.distanceFrom(zero);
 
+export const dot = (a: Point, b: Point) => a.x * b.x + a.y * b.y;
+
+export const det = (a: Point, b: Point) => a.x * b.y - a.y * b.x;
+
 /**
  * Calculates the angle between 2 vectors
  * @param {Point} a
  * @param {Point} b
  * @returns the angle in radians from `a` to `b`
  */
-export const calcAngleBetweenVectors = (a: Point, b: Point): TRadian =>
-  Math.atan2(crossProduct(a, b), dotProduct(a, b)) as TRadian;
+export const calcAngleBetweenVectors = (a: Point, b: Point): TRadian => {
+  return Math.atan2(det(a, b), dot(a, b)) as TRadian;
+};
 
 /**
  * Calculates the angle between the x axis and the vector
@@ -53,6 +58,27 @@ export const calcVectorRotation = (v: Point) =>
  */
 export const getUnitVector = (v: Point): Point =>
   v.eq(zero) ? v : v.scalarDivide(magnitude(v));
+
+export const dotProduct = (v: Point, onto: Point) => {
+  const size = magnitude(v);
+  return size ? size * Math.cos(calcAngleBetweenVectors(onto, v)) : 0;
+};
+
+/**
+ * @param {Point} A
+ * @param {Point} B
+ * @param {Point} C
+ * @returns {{ vector: Point, angle: TRadian}} vector representing the bisector of A and A's angle
+ */
+export const getBisector = (A: Point, B: Point, C: Point) => {
+  const AB = createVector(A, B),
+    AC = createVector(A, C),
+    alpha = calcAngleBetweenVectors(AB, AC);
+  return {
+    vector: getUnitVector(rotateVector(AB, alpha / 2)),
+    angle: alpha,
+  };
+};
 
 /**
  * @param {Point} v
@@ -73,23 +99,6 @@ export const getOrthonormalVector = (
 ): Point => getUnitVector(getOrthogonalVector(v, counterClockwise));
 
 /**
- * Cross product of two vectors in 2D
- * @param {Point} a
- * @param {Point} b
- * @returns {number} the magnitude of Z vector
- */
-export const crossProduct = (a: Point, b: Point): number =>
-  a.x * b.y - a.y * b.x;
-
-/**
- * Dot product of two vectors in 2D
- * @param {Point} a
- * @param {Point} b
- * @returns {number}
- */
-export const dotProduct = (a: Point, b: Point): number => a.x * b.x + a.y * b.y;
-
-/**
  * Checks if the vector is between two others. It is considered
  * to be inside when the vector to be tested is between the
  * initial vector and the final vector (included) in a counterclockwise direction.
@@ -100,8 +109,8 @@ export const dotProduct = (a: Point, b: Point): number => a.x * b.x + a.y * b.y;
  */
 export const isBetweenVectors = (t: Point, a: Point, b: Point): boolean => {
   if (t.eq(a) || t.eq(b)) return true;
-  const AxB = crossProduct(a, b),
-    AxT = crossProduct(a, t),
-    BxT = crossProduct(b, t);
+  const AxB = det(a, b),
+    AxT = det(a, t),
+    BxT = det(b, t);
   return AxB >= 0 ? AxT >= 0 && BxT <= 0 : !(AxT <= 0 && BxT >= 0);
 };
