@@ -237,8 +237,6 @@ export class InteractiveFabricObject<
       const position = control.positionHandler(v, t, t, this, control);
       const connectionPosition = control.connectionPositionHandler(
         position,
-        v,
-        t,
         this,
         control
       );
