@@ -1850,8 +1850,10 @@ export class FabricText<
       // fabric output by default at top, left.
       left:
         text.left -
-        (textAnchor === 'center' || textAnchor === 'right'
-          ? sizeInParent.x / (textAnchor === 'center' ? 2 : 1)
+        (textAnchor === 'center'
+          ? sizeInParent.x / 2
+          : textAnchor === 'right'
+          ? sizeInParent.x
           : 0),
       top:
         text.top -
