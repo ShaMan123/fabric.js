@@ -61,7 +61,8 @@ export const getUnitVector = (v: Point): Point =>
 
 export const dotProduct = (v: Point, onto: Point) => {
   const size = magnitude(v);
-  return size ? size * Math.cos(calcAngleBetweenVectors(onto, v)) : 0;
+  const baseSize = magnitude(onto);
+  return size && baseSize ? dot(v, onto) / baseSize : 0;
 };
 
 /**
