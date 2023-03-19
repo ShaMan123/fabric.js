@@ -83,6 +83,11 @@ export class Path<
     // @TODO fix this bug not respecting origin
     typeof left === 'number' && this.set(LEFT, left);
     typeof top === 'number' && this.set(TOP, top);
+    // this.setRelativeXY(
+    //   new Point(left ?? pathTL.x, top ?? pathTL.y),
+    //   typeof left === 'number' ? this.originX : 'left',
+    //   typeof top === 'number' ? this.originY : 'top'
+    // );
   }
 
   /**
