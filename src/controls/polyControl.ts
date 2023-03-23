@@ -2,7 +2,6 @@ import { Point } from '../Point';
 import { Control } from './Control';
 import type { TMat2D } from '../typedefs';
 import type { Polyline } from '../shapes/Polyline';
-import { multiplyTransformMatrices } from '../util/misc/matrix';
 import type {
   TModificationEvents,
   TPointerEvent,
@@ -20,22 +19,11 @@ type TTransformAnchor = Transform & { pointIndex: number };
  * This function locates the controls.
  * It'll be used both for drawing and for interaction.
  */
-export const createPolyPositionHandler = (pointIndex: number) => {
-  return function (
-    dim: Point,
-    finalMatrix: TMat2D,
-    finalMatrix2: TMat2D,
-    polyObject: Polyline
-  ) {
-    const { points, pathOffset } = polyObject;
-    return new Point(points[pointIndex])
-      .subtract(pathOffset)
-      .transform(
-        multiplyTransformMatrices(
-          polyObject.getViewportTransform(),
-          polyObject.calcTransformMatrix()
-        )
-      );
+const factoryPolyPositionHandler = (pointIndex: number) => {
+  return function (dim: Point, finalMatrix: TMat2D, polyObject: Polyline) {
+    return new Point(polyObject.points[pointIndex])
+      .subtract(polyObject.pathOffset)
+      .transform(polyObject.calcTransformMatrixInViewport());
   };
 };
 
@@ -52,15 +40,15 @@ export const polyActionHandler = (
   x: number,
   y: number
 ) => {
-  const { target, pointIndex } = transform;
-  const poly = target as unknown as Polyline;
-  const mouseLocalPosition = sendPointToPlane(
-    new Point(x, y),
-    undefined,
-    poly.calcOwnMatrix()
-  );
+  const poly = transform.target as Polyline,
+    pointIndex = transform.pointIndex,
+    positionInPlane = sendPointToPlane(
+      new Point(x, y),
+      undefined,
+      poly.calcTransformMatrixInViewport()
+    );
 
-  poly.points[pointIndex] = mouseLocalPosition.add(poly.pathOffset);
+  poly.points[pointIndex] = positionInPlane.add(poly.pathOffset);
   poly.setDimensions();
 
   return true;

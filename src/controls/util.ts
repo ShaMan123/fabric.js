@@ -9,8 +9,6 @@ import { Point } from '../Point';
 import type { FabricObject } from '../shapes/Object/FabricObject';
 import type { TOriginX, TOriginY } from '../typedefs';
 import type { Control } from './Control';
-import { calcPlaneRotation } from '../util/misc/matrix';
-import { sendPointToPlane } from '../util/misc/planeChange';
 import { calcVectorRotation } from '../util/misc/vectors';
 import { PIBy4, twoMathPi } from '../constants';
 
@@ -93,63 +91,4 @@ export function findCornerQuadrant(
     fabricObject.bbox.vectorFromOrigin(new Point(control))
   );
   return Math.round(((rotation + twoMathPi) % twoMathPi) / PIBy4);
-}
-
-/**
- * @returns the normalized point (rotated relative to center) in local coordinates
- */
-function normalizePoint(
-  target: FabricObject,
-  point: Point,
-  originX: TOriginX,
-  originY: TOriginY
-): Point {
-  // @TODO: all this looks wrong
-  const rotation = calcPlaneRotation(target.calcTransformMatrix());
-  const p = sendPointToPlane(
-    target.getXY(originX, originY),
-    undefined,
-    target.group?.calcTransformMatrix()
-  );
-  const p2 = rotation
-    ? point.rotate(-rotation, target.getRelativeCenterPoint())
-    : point;
-  return p2.subtract(p);
-}
-
-/**
- * Transforms a point to the offset from the given origin
- * @param {Object} transform
- * @param {String} originX
- * @param {String} originY
- * @param {number} x
- * @param {number} y
- * @return {Fabric.Point} the normalized point
- */
-export function getLocalPoint(
-  { target, corner }: Transform,
-  originX: TOriginX,
-  originY: TOriginY,
-  x: number,
-  y: number
-) {
-  const control = target.controls[corner],
-    zoom = target.canvas?.getZoom() || 1,
-    padding = target.padding / zoom,
-    localPoint = normalizePoint(target, new Point(x, y), originX, originY);
-  if (localPoint.x >= padding) {
-    localPoint.x -= padding;
-  }
-  if (localPoint.x <= -padding) {
-    localPoint.x += padding;
-  }
-  if (localPoint.y >= padding) {
-    localPoint.y -= padding;
-  }
-  if (localPoint.y <= padding) {
-    localPoint.y += padding;
-  }
-  localPoint.x -= control.offsetX;
-  localPoint.y -= control.offsetY;
-  return localPoint;
 }
