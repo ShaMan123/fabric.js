@@ -20,7 +20,12 @@ type TTransformAnchor = Transform & { pointIndex: number };
  * It'll be used both for drawing and for interaction.
  */
 const factoryPolyPositionHandler = (pointIndex: number) => {
-  return function (dim: Point, finalMatrix: TMat2D, polyObject: Polyline) {
+  return function (
+    dim: Point,
+    finalMatrix: TMat2D,
+    finalMatrix2: TMat2D,
+    polyObject: Polyline
+  ) {
     return new Point(polyObject.points[pointIndex])
       .subtract(polyObject.pathOffset)
       .transform(polyObject.calcTransformMatrixInViewport());
@@ -111,7 +116,7 @@ export function createPolyControls(
   ) {
     controls[`p${idx}`] = new Control({
       actionName: ACTION_NAME,
-      positionHandler: createPolyPositionHandler(idx),
+      positionHandler: factoryPolyPositionHandler(idx),
       actionHandler: createPolyActionHandler(idx),
       ...options,
     });
