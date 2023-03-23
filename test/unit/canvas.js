@@ -1654,8 +1654,8 @@
     assert.equal(t.originY, rect.originY, 'no origin change for drag');
 
     eventStub = {
-      clientX: canvasOffset.left + rect.oCoords.tl.corner.tl.x + 1,
-      clientY: canvasOffset.top + rect.oCoords.tl.corner.tl.y + 1,
+      clientX: canvasOffset.left + rect.controlCoords.tl.corner.tl.x + 1,
+      clientY: canvasOffset.top + rect.controlCoords.tl.corner.tl.y + 1,
       target: canvas.upperCanvasEl
     };
     rect.__corner = rect.findControl(
@@ -1700,8 +1700,8 @@
 
     // to be replaced with new api test
     // eventStub = {
-    //   clientX: canvasOffset.left + rect.oCoords.mtr.x,
-    //   clientY: canvasOffset.top + rect.oCoords.mtr.y,
+    //   clientX: canvasOffset.left + rect.controlCoords.mtr.x,
+    //   clientY: canvasOffset.top + rect.controlCoords.mtr.y,
     //   target: canvas.upperCanvasEl,
     // };
     // canvas._setupCurrentTransform(eventStub, rect, alreadySelected);
@@ -1721,8 +1721,8 @@
   //   var canvasEl = canvas.getElement(),
   //       canvasOffset = fabric.util.getElementOffset(canvasEl);
   //   var eventStub = {
-  //     clientX: canvasOffset.left + rect.oCoords.mtr.x,
-  //     clientY: canvasOffset.top + rect.oCoords.mtr.y,
+  //     clientX: canvasOffset.left + rect.controlCoords.mtr.x,
+  //     clientY: canvasOffset.top + rect.controlCoords.mtr.y,
   //     target: canvas.upperCanvasEl,
   //   };
   //   canvas._setupCurrentTransform(eventStub, rect);
@@ -1739,8 +1739,8 @@
   //   var canvasEl = canvas.getElement(),
   //       canvasOffset = fabric.util.getElementOffset(canvasEl);
   //   var eventStub = {
-  //     clientX: canvasOffset.left + rect.oCoords.mtr.x,
-  //     clientY: canvasOffset.top + rect.oCoords.mtr.y,
+  //     clientX: canvasOffset.left + rect.controlCoords.mtr.x,
+  //     clientY: canvasOffset.top + rect.controlCoords.mtr.y,
   //     target: canvas.upperCanvasEl,
   //   };
   //   canvas._setupCurrentTransform(eventStub, rect);

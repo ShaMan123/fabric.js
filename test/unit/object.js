@@ -396,16 +396,16 @@
 
   });
 
-  QUnit.test.skip('toCanvasElement does not modify oCoords on zoomed canvas', function(assert) {
+  QUnit.test.skip('toCanvasElement does not modify controlCoords on zoomed canvas', function(assert) {
     var cObj = new fabric.Rect({
       width: 100, height: 100, fill: 'red', strokeWidth: 0
     });
     canvas.setZoom(2);
     canvas.add(cObj);
-    var originaloCoords = cObj.oCoords;
+    var originaloCoords = cObj.controlCoords;
     var originalaCoords = cObj.bboxCoords;
     cObj.toCanvasElement();
-    assert.deepEqual(cObj.oCoords, originaloCoords, 'cObj did not get object coords changed');
+    assert.deepEqual(cObj.controlCoords, originaloCoords, 'cObj did not get object coords changed');
     assert.deepEqual(cObj.bboxCoords, originalaCoords, 'cObj did not get absolute coords changed');
   });
 
