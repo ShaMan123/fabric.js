@@ -1130,7 +1130,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
 
     // We initially clicked in an empty area, so we draw a box for multiple selection
     if (groupSelector) {
-      const pointer = this.getScenePoint(e);
+      const pointer = this.getViewportPoint(e);
 
       groupSelector.deltaX = pointer.x - groupSelector.x;
       groupSelector.deltaY = pointer.y - groupSelector.y;
