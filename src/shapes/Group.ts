@@ -280,6 +280,11 @@ export class Group
       (this._objects || []).forEach((object) => {
         object._set(key, value);
       });
+      // layout in case children need viewport coords
+      value &&
+        this._applyLayoutStrategy({
+          type: 'viewport',
+        });
     }
     return this;
   }
