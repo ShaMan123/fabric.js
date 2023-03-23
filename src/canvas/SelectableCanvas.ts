@@ -9,10 +9,7 @@ import type {
   TPointerEvent,
   Transform,
 } from '../EventTypeDefs';
-import {
-  addTransformToObject,
-  saveObjectTransform,
-} from '../util/misc/objectTransforms';
+import { addTransformToObject } from '../util/misc/objectTransforms';
 import type { TCanvasSizeOptions } from './StaticCanvas';
 import { StaticCanvas } from './StaticCanvas';
 import { isCollection } from '../Collection';
@@ -488,7 +485,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
 
   /**
    * This method will take in consideration a modifier key pressed and the control we are
-   * about to drag, and try to guess the anchor point ( origin ) of the transormation.
+   * about to drag, and try to guess the anchor point ( origin ) of the transformation.
    * This should be really in the realm of controls, and we should remove specific code for legacy
    * embedded actions.
    * @TODO this probably deserve discussion/rediscovery and change/refactor
@@ -535,14 +532,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
     target: FabricObject,
     alreadySelected: boolean
   ): void {
-    const pointer = target.group
-      ? // transform pointer to target's containing coordinate plane
-        sendPointToPlane(
-          this.getScenePoint(e),
-          undefined,
-          target.group.calcTransformMatrix()
-        )
-      : this.getScenePoint(e);
+    const pointer = this.getViewportPoint(e);
     const { key: corner = '', control } = target.getActiveControl() || {},
       actionHandler =
         alreadySelected && control
@@ -563,28 +553,15 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
         actionHandler,
         actionPerformed: false,
         corner,
-        scaleX: target.scaleX,
-        scaleY: target.scaleY,
-        skewX: target.skewX,
-        skewY: target.skewY,
-        offsetX: offset.x,
-        offsetY: offset.x,
         originX: origin.x,
         originY: origin.y,
         ex: pointer.x,
         ey: pointer.y,
         lastX: pointer.x,
         lastY: pointer.y,
-        theta: calcPlaneRotation(target.calcTransformMatrix()),
-        width: target.width,
-        height: target.height,
+        theta: calcPlaneRotation(target.calcTransformMatrixInViewport()),
         shiftKey: e.shiftKey,
         altKey,
-        original: {
-          ...saveObjectTransform(target),
-          originX: origin.x,
-          originY: origin.y,
-        },
       };
 
     this._currentTransform = transform;
