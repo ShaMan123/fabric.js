@@ -67,23 +67,19 @@ export const factoryPolyActionHandler = (
     x: number,
     y: number
   ) {
-    // @TODO revisit and change plane!
     const poly = transform.target as Polyline,
-      anchorPoint = new Point(
-        poly.points[(pointIndex > 0 ? pointIndex : poly.points.length) - 1]
-      ),
-      anchorPointInParentPlane = anchorPoint
+      anchorIndex = (pointIndex > 0 ? pointIndex : poly.points.length) - 1,
+      originBefore = new Point(poly.points[anchorIndex])
         .subtract(poly.pathOffset)
-        .transform(poly.calcOwnMatrix()),
-      actionPerformed = fn(eventData, { ...transform, pointIndex }, x, y);
+        .transform(poly.calcTransformMatrix());
 
-    const newAnchorPointInParentPlane = anchorPoint
+    const actionPerformed = fn(eventData, { ...transform, pointIndex }, x, y);
+
+    const offset = new Point(poly.points[anchorIndex])
       .subtract(poly.pathOffset)
-      .transform(poly.calcOwnMatrix());
-
-    const diff = newAnchorPointInParentPlane.subtract(anchorPointInParentPlane);
-    poly.left -= diff.x;
-    poly.top -= diff.y;
+      .transform(poly.calcTransformMatrix())
+      .subtract(originBefore);
+    poly.translate(-offset.x, -offset.y, false);
 
     return actionPerformed;
   };
