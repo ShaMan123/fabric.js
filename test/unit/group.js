@@ -338,12 +338,12 @@
 
     assert.ok(!group.containsPoint(new fabric.Point( 0, 0 )));
 
-    group.scale(2);
+    group.scale(2, 2);
     assert.ok(group.containsPoint(new fabric.Point( 50, 120 )));
     assert.ok(group.containsPoint(new fabric.Point( 100, 160 )));
     assert.ok(!group.containsPoint(new fabric.Point( 0, 0 )));
 
-    group.scale(1);
+    group.scale(1, 1);
     group.padding = 30;
     group.invalidateCoords();
     assert.ok(group.containsPoint(new fabric.Point( 50, 120 )));
