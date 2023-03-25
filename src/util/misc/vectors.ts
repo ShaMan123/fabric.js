@@ -2,7 +2,6 @@ import type { XY } from '../../Point';
 import { Point } from '../../Point';
 import type { TRadian } from '../../typedefs';
 
-const unitVectorX = new Point(1, 0);
 const zero = new Point();
 
 /**
@@ -49,8 +48,7 @@ export const calcAngleBetweenVectors = (a: Point, b: Point): TRadian => {
  * @param {Point} v
  * @returns the angle in radians of `v`
  */
-export const calcVectorRotation = (v: Point) =>
-  calcAngleBetweenVectors(unitVectorX, v);
+export const calcVectorRotation = (v: XY) => Math.atan2(v.y, v.x) as TRadian;
 
 /**
  * @param {Point} v

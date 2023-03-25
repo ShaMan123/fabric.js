@@ -9,6 +9,7 @@ import {
   multiplyTransformMatrices,
   createRotateMatrix,
   multiplyTransformMatrixArray,
+  calcPlaneRotation,
 } from '../../util/misc/matrix';
 import { applyTransformToObject } from '../../util/misc/objectTransforms';
 import { calcBaseChangeMatrix } from '../../util/misc/planeChange';
@@ -146,14 +147,15 @@ export class ObjectTransformations<
   }
 
   scale(x: number, y: number, options?: ObjectTransformOptions) {
-    const rotation = calcRotateMatrix({
-      rotation: this.getTotalAngle(),
-    });
-    const [a, b, c, d] = options?.inViewport
+    const t = options?.inViewport
       ? this.calcTransformMatrixInViewport()
       : this.calcTransformMatrix();
+    const rotation = createRotateMatrix({
+      rotation: calcPlaneRotation(t),
+    });
+    const [a, b, c, d] = t;
     return this.transformObject(
-      multiplyTransformMatrixChain([
+      multiplyTransformMatrixArray([
         rotation,
         [(x / a) * rotation[0], 0, 0, (y / d) * rotation[3], 0, 0],
         invertTransform(rotation),
@@ -163,11 +165,14 @@ export class ObjectTransformations<
   }
 
   scaleBy(x: number, y: number, options?: ObjectTransformOptions) {
-    const rotation = calcRotateMatrix({
-      rotation: this.getTotalAngle(),
+    const t = options?.inViewport
+      ? this.calcTransformMatrixInViewport()
+      : this.calcTransformMatrix();
+    const rotation = createRotateMatrix({
+      rotation: calcPlaneRotation(t),
     });
     return this.transformObject(
-      multiplyTransformMatrixChain([
+      multiplyTransformMatrixArray([
         rotation,
         [x, 0, 0, y, 0, 0],
         invertTransform(rotation),
