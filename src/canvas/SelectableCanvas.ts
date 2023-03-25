@@ -337,9 +337,10 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
   _chooseObjectsToRender(): FabricObject[] {
     const activeObject = this._activeObject;
     return !this.preserveObjectStacking && activeObject
-      ? this._objects
-          .filter((object) => object !== activeObject)
-          .concat(activeObject)
+      ? (!activeObject.group
+          ? this._objects.filter((object) => object !== activeObject)
+          : this._objects
+        ).concat(activeObject)
       : this._objects;
   }
 
