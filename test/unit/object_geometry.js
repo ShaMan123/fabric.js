@@ -380,7 +380,6 @@
     var cObj = new fabric.Object({ strokeWidth: 0 }),
         boundingRect;
     assert.ok(typeof cObj.getBoundingRect === 'function');
-
     boundingRect = cObj.getBoundingRect();
     assert.equal(boundingRect.left, 0);
     assert.equal(boundingRect.top, 0);
@@ -413,7 +412,6 @@
     var cObj = new fabric.Object(),
         boundingRect;
     assert.ok(typeof cObj.getBoundingRect === 'function');
-
     boundingRect = cObj.getBoundingRect();
     assert.equal(boundingRect.left.toFixed(2), 0);
     assert.equal(boundingRect.top.toFixed(2), 0);
@@ -462,6 +460,7 @@
 
   QUnit.test('getCoords return coordinate of object in canvas coordinate.', function(assert) {
     var cObj = new fabric.Object({ width: 10, height: 15, strokeWidth: 2, top: 30, left: 40 });
+    canvas.add(cObj);
     var coords = cObj.getCoords();
     assert.deepEqual(coords[0], new fabric.Point(40, 30), 'return top left corner');
     assert.deepEqual(coords[1], new fabric.Point(52, 30), 'return top right corner');
@@ -485,9 +484,8 @@
 
   QUnit.test('getCoords return coordinate of object in absolute coordinates and ignore canvas zoom', function(assert) {
     var cObj = new fabric.Object({ width: 10, height: 15, strokeWidth: 2, top: 30, left: 40 });
-    cObj.canvas = {
-      viewportTransform: [2, 0, 0, 2, 35, 35]
-    };
+    canvas.add(cObj);
+    canvas.setViewportTransform([2, 0, 0, 2, 35, 25]);
     var coords = cObj.getCoords(true);
     assert.deepEqual(coords[0], new fabric.Point(40, 30), 'return top left corner cached controlCoords');
     assert.deepEqual(coords[1], new fabric.Point(52, 30), 'return top right corner cached controlCoords');
