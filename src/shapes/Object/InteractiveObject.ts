@@ -232,7 +232,7 @@ export class InteractiveFabricObject<
   protected calcControlCoords(): Record<string, TControlCoord> {
     const legacyBBox = BBox.legacy(this);
     const coords = mapValues(this.controls, (control, key) => {
-      const v = legacyBBox.getDimensionsVector();
+      const v = legacyBBox.getBBoxVector();
       const t = legacyBBox.getTransformation();
       const position = control.positionHandler(v, t, t, this, control);
       const connectionPosition = control.connectionPositionHandler(
@@ -378,6 +378,13 @@ export class InteractiveFabricObject<
     ctx.save();
     ctx.strokeStyle = borderColor;
     this._setLineDash(ctx, borderDashArray);
+    // ctx.lineWidth = this.borderScaleFactor;
+    // // TODO: remove legacy?
+    // ctx.save();
+    // const legacy = BBox.legacy(this);
+    // legacy.transform(ctx);
+    // this.strokeBordersLegacy(ctx, legacy.getBBoxVector());
+    // ctx.restore();
     this.strokeBorders(ctx);
     ctx.restore();
   }
