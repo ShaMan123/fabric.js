@@ -1,3 +1,4 @@
+import { BBox } from '../../BBox/BBox';
 import { Canvas } from '../../canvas/Canvas';
 import { StaticCanvas } from '../../canvas/StaticCanvas';
 import { iMatrix } from '../../constants';
@@ -5,12 +6,8 @@ import { ObjectEvents } from '../../EventTypeDefs';
 import { Point } from '../../Point';
 import type { TMat2D } from '../../typedefs';
 import { mapValues } from '../../util/internals';
-import {
-  calcPlaneRotation,
-  multiplyTransformMatrices,
-} from '../../util/misc/matrix';
-import { getUnitVector, rotateVector } from '../../util/misc/vectors';
-import { BBox } from '../../BBox/BBox';
+import { multiplyTransformMatrices } from '../../util/misc/matrix';
+import { magnitude } from '../../util/misc/vectors';
 import { ObjectLayout } from './ObjectLayout';
 import { ControlProps } from './types/ControlProps';
 import { FillStrokeProps } from './types/FillStrokeProps';
@@ -77,9 +74,11 @@ export class ObjectBBox<EventSpec extends ObjectEvents = ObjectEvents>
     {
       applyViewportTransform = this.needsViewportCoords(),
       transform = this.calcTransformMatrix(),
+      padding = this.padding,
     }: {
       applyViewportTransform?: boolean;
       transform?: TMat2D;
+      padding?: number;
     } = {}
   ) {
     const dimVector = origin
@@ -87,43 +86,32 @@ export class ObjectBBox<EventSpec extends ObjectEvents = ObjectEvents>
       .add(origin.scalarMultiply(!this.strokeUniform ? this.strokeWidth : 0))
       .transform(
         applyViewportTransform
-          ? this.calcTransformMatrixInViewport()
-          : this.calcTransformMatrix(),
+          ? multiplyTransformMatrices(this.getViewportTransform(), transform)
+          : transform,
         true
       );
-    const strokeUniformVector = getUnitVector(dimVector).scalarMultiply(
-      this.strokeUniform ? this.strokeWidth : 0
+    return dimVector.scalarMultiply(
+      1 +
+        // @TODO: this is probably wrong, stroke uniform width is a scene plane scalar
+        (2 * padding + (this.strokeUniform ? this.strokeWidth : 0)) /
+          magnitude(dimVector)
     );
-    return dimVector.add(strokeUniformVector);
   }
 
   protected calcCoord(
     origin: Point,
     {
-      offset = new Point(),
       applyViewportTransform = this.needsViewportCoords(),
-      padding = 0,
     }: {
-      offset?: Point;
       applyViewportTransform?: boolean;
-      padding?: number;
     } = {}
   ) {
-    const vpt = this.getViewportTransform();
-    const offsetVector = rotateVector(
-      offset.add(origin.scalarMultiply(padding * 2)),
-      calcPlaneRotation(
-        applyViewportTransform
-          ? this.calcTransformMatrixInViewport()
-          : this.calcTransformMatrix()
-      )
-    );
     const realCenter = applyViewportTransform
-      ? this.getCenterPoint().transform(vpt)
+      ? this.getCenterPoint().transform(this.getViewportTransform())
       : this.getCenterPoint();
-    return realCenter
-      .add(this.calcDimensionsVector(origin, { applyViewportTransform }))
-      .add(offsetVector);
+    return realCenter.add(
+      this.calcDimensionsVector(origin, { applyViewportTransform })
+    );
   }
 
   /**
