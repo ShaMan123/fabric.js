@@ -393,7 +393,6 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * Override at will
    */
   protected findDragTargets(e: DragEvent) {
-    this.targets = [];
     const target = this.searchPossibleTargets(
       this._objects,
       this.getViewportPoint(e)
@@ -1404,7 +1403,9 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
           const pointer = this.getViewportPoint(e);
           target =
             // first search active objects for a target to remove
-            this.searchPossibleTargets(prevActiveObjects, pointer) ||
+            this.findTargetsTraversal(prevActiveObjects, pointer, {
+              searchStrategy: 'first-hit',
+            })[0] ||
             //  if not found, search under active selection for a target to add
             // `prevActiveObjects` will be searched but we already know they will not be found
             this.searchPossibleTargets(this._objects, pointer);

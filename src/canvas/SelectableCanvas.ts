@@ -704,8 +704,6 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
       activeObject = this._activeObject,
       aObjects = this.getActiveObjects();
 
-    this.targets = [];
-
     if (activeObject && aObjects.length >= 1) {
       if (activeObject.findControl(pointer, isTouchEvent(e))) {
         // if we hit the corner of the active object, let's return that.
@@ -725,7 +723,6 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
           return activeObject;
         } else {
           const subTargets = this.targets;
-          this.targets = [];
           const target = this.searchPossibleTargets(this._objects, pointer);
           if (
             e[this.altSelectionKey as ModifierKey] &&
@@ -857,10 +854,10 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
   }
 
   /**
-   * Function used to search inside objects an object that contains pointer in bounding box or that contains pointerOnCanvas when painted
+   * Function used to search objects for a object containing {@link pointer}
    * @see {@link findTargetsTraversal}
    * @param {FabricObject[]} [objects] objects array to look into
-   * @param {Point} [pointer] x,y object of point coordinates we want to check.
+   * @param {Point} [pointer] viewport point
    * @return {FabricObject} **top most selectable object on screen** that contains {@link pointer}
    */
   searchPossibleTargets(
@@ -870,12 +867,18 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
     const targets = this.findTargetsTraversal(objects, pointer, {
       searchStrategy: 'first-hit',
     });
-    this.targets.push(...targets);
+
     const found = targets.findIndex((target) => {
-      return !target.parent || target.parent.interactive;
+      return !target.group || target.group.interactive;
     });
-    this.targets = targets.slice(0, found);
-    return targets[found];
+
+    if (found > -1) {
+      this.targets = targets.slice(0, found);
+      return targets[found];
+    } else {
+      this.targets = targets;
+      return undefined;
+    }
   }
 
   /**
