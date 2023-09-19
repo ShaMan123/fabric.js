@@ -1,16 +1,16 @@
 import { BBox } from '../../BBox/BBox';
-import { Canvas } from '../../canvas/Canvas';
-import { StaticCanvas } from '../../canvas/StaticCanvas';
+import type { Canvas } from '../../canvas/Canvas';
+import type { StaticCanvas } from '../../canvas/StaticCanvas';
 import { iMatrix } from '../../constants';
-import { ObjectEvents } from '../../EventTypeDefs';
+import type { ObjectEvents } from '../../EventTypeDefs';
 import { Point } from '../../Point';
 import type { TMat2D } from '../../typedefs';
 import { mapValues } from '../../util/internals';
 import { multiplyTransformMatrices } from '../../util/misc/matrix';
 import { magnitude } from '../../util/misc/vectors';
 import { ObjectLayout } from './ObjectLayout';
-import { ControlProps } from './types/ControlProps';
-import { FillStrokeProps } from './types/FillStrokeProps';
+import type { ControlProps } from './types/ControlProps';
+import type { FillStrokeProps } from './types/FillStrokeProps';
 
 export class ObjectBBox<EventSpec extends ObjectEvents = ObjectEvents>
   extends ObjectLayout<EventSpec>

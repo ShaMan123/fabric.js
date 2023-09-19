@@ -14,7 +14,7 @@ import {
   rotateVector,
 } from '../vectors';
 import { StrokeProjectionsBase } from './StrokeProjectionsBase';
-import type { TProjection, TProjectStrokeOnPointsOptions } from './types';
+import type { TProjectStrokeOnPointsOptions, TProjection } from './types';
 
 const zeroVector = new Point();
 

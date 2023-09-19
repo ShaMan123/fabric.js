@@ -4,15 +4,14 @@ import type {
   Transform,
   TransformActionHandler,
 } from '../EventTypeDefs';
-import { resolveOrigin, resolveOriginPoint } from '../util/misc/resolveOrigin';
 import { Point } from '../Point';
-import type { TAxis, TAxisKey } from '../typedefs';
-import type { TOriginX, TOriginY } from '../typedefs';
+import type { FabricObject } from '../shapes/Object/FabricObject';
+import type { TAxis, TAxisKey, TOriginX, TOriginY } from '../typedefs';
+import { resolveOrigin, resolveOriginPoint } from '../util/misc/resolveOrigin';
 import { findCornerQuadrant, isLocked, NOT_ALLOWED_CURSOR } from './util';
 import { wrapWithFireEvent } from './wrapWithFireEvent';
 import { BBox } from '../BBox/BBox';
 import { createVector, dotProduct, getUnitVector } from '../util/misc/vectors';
-import type { FabricObject } from '../shapes/Object/FabricObject';
 
 export type SkewTransform = Transform & { skewingSide: -1 | 1 };
 

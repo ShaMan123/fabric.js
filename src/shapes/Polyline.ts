@@ -6,6 +6,9 @@ import type { XY } from '../Point';
 import { Point } from '../Point';
 import type { Abortable, TClassProperties, TOptions } from '../typedefs';
 import { classRegistry } from '../ClassRegistry';
+import { LEFT, TOP } from '../constants';
+import type { CSSRules } from '../parser/typedefs';
+import { cloneDeep } from '../util/internals/cloneDeep';
 import { makeBoundingBoxFromPoints } from '../util/misc/boundingBoxFromPoints';
 import { calcDimensionsMatrix, transformPoint } from '../util/misc/matrix';
 import { projectStrokeOnPoints } from '../util/misc/projectStroke';
@@ -15,9 +18,6 @@ import { toFixed } from '../util/misc/toFixed';
 import { FabricObject, cacheProperties } from './Object/FabricObject';
 import type { FabricObjectProps, SerializedObjectProps } from './Object/types';
 import type { ObjectEvents } from '../EventTypeDefs';
-import { cloneDeep } from '../util/internals/cloneDeep';
-import { LEFT, TOP } from '../constants';
-import type { CSSRules } from '../parser/typedefs';
 import { sendVectorToPlane } from '../util';
 
 export const polylineDefaultValues: Partial<TClassProperties<Polyline>> = {

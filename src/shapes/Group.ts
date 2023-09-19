@@ -1,4 +1,4 @@
-import type { CollectionEvents, ObjectEvents } from '../EventTypeDefs';
+import { classRegistry } from '../ClassRegistry';
 import { createCollectionMixin } from '../Collection';
 import type { TClassProperties, TSVGReviver, TOptions } from '../typedefs';
 import {
@@ -11,9 +11,8 @@ import {
 } from '../util/misc/objectEnlive';
 import { applyTransformToObject } from '../util/misc/objectTransforms';
 import { FabricObject } from './Object/FabricObject';
-import { Rect } from './Rect';
-import { classRegistry } from '../ClassRegistry';
 import type { FabricObjectProps, SerializedObjectProps } from './Object/types';
+import { Rect } from './Rect';
 import { log } from '../util/internals/console';
 import type {
   ImperativeLayoutOptions,
