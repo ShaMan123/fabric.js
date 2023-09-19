@@ -13,13 +13,7 @@ export const getObjectBounds = (
   destinationGroup: Group,
   object: FabricObject
 ): Point[] => {
-  const {
-    strokeUniform,
-    strokeWidth,
-    width,
-    height,
-    group: currentGroup,
-  } = object;
+  const { group: currentGroup } = object;
   const t =
     currentGroup && currentGroup !== destinationGroup
       ? calcPlaneChangeMatrix(
@@ -30,10 +24,7 @@ export const getObjectBounds = (
   const objectCenter = t
     ? object.getRelativeCenterPoint()
     : object.getRelativeCenterPoint();
-  const sizeVector = object.bbox
-    .sendToParent()
-    .getDimensionsVector()
-    .scalarDivide(2);
+  const sizeVector = object.bbox.sendToParent().getBBoxVector().scalarDivide(2);
 
   const a = objectCenter.subtract(sizeVector);
   const b = objectCenter.add(sizeVector);

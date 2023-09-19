@@ -316,7 +316,7 @@ export class InteractiveFabricObject<
       key: string,
       fabricObject: InteractiveFabricObject
     ) => R
-  ) {
+  ): Record<string, R> {
     return mapValues(this.controls, (value, key) => fn(value, key, this));
   }
 

@@ -4,18 +4,11 @@ import type { TBBox } from '../../typedefs';
 import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints';
 import { ObjectTransformations } from './ObjectTransformations';
 import { ViewportBBox } from '../../BBox/ViewportBBox';
+import { Intersection } from '../../Intersection';
 
 export class ObjectGeometry<
   EventSpec extends ObjectEvents = ObjectEvents
 > extends ObjectTransformations<EventSpec> {
-  /**
-   * Skip rendering of objects that are not included in current drawing area (viewport/bbox for canvas/group respectively).
-   * May greatly help in applications with crowded canvas and use of zoom/pan.
-   * @type Boolean
-   * @default
-   */
-  skipOffscreen = true;
-
   /**
    * Checks if object intersects with the scene rect formed by {@link tl} and {@link br}
    */

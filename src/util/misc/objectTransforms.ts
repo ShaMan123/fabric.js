@@ -1,6 +1,6 @@
 import { Point } from '../../Point';
+import type { ObjectTransformations as BaseFabricObject } from '../../shapes/Object/ObjectTransformations';
 import type { TMat2D } from '../../typedefs';
-import type { ObjectGeometry } from '../../shapes/Object/ObjectGeometry';
 import { makeBoundingBoxFromPoints } from './boundingBoxFromPoints';
 import {
   invertTransform,
@@ -16,11 +16,11 @@ import {
  * Removing from an object a transform that rotate by 30deg is like rotating by 30deg
  * in the opposite direction.
  * This util is used to add objects inside transformed groups or nested groups.
- * @param {ObjectGeometry} object the object you want to transform
+ * @param {BaseFabricObject} object the object you want to transform
  * @param {TMat2D} transform the destination transform
  */
 export const removeTransformFromObject = (
-  object: ObjectGeometry,
+  object: BaseFabricObject,
   transform: TMat2D
 ) => {
   const inverted = invertTransform(transform),
@@ -36,11 +36,11 @@ export const removeTransformFromObject = (
  * this is equivalent to change the space where the object is drawn.
  * Adding to an object a transform that scale by 2 is like scaling it by 2.
  * This is used when removing an object from an active selection for example.
- * @param {ObjectGeometry} object the object you want to transform
+ * @param {BaseFabricObject} object the object you want to transform
  * @param {Array} transform the destination transform
  */
 export const addTransformToObject = (
-  object: ObjectGeometry,
+  object: BaseFabricObject,
   transform: TMat2D
 ) =>
   applyTransformToObject(
@@ -50,11 +50,11 @@ export const addTransformToObject = (
 
 /**
  * discard an object transform state and apply the one from the matrix.
- * @param {ObjectGeometry} object the object you want to transform
+ * @param {BaseFabricObject} object the object you want to transform
  * @param {Array} transform the destination transform
  */
 export const applyTransformToObject = (
-  object: ObjectGeometry,
+  object: BaseFabricObject,
   transform: TMat2D
 ) => {
   const { translateX, translateY, scaleX, scaleY, ...otherOptions } =
@@ -68,9 +68,9 @@ export const applyTransformToObject = (
 };
 /**
  * reset an object transform state to neutral. Top and left are not accounted for
- * @param  {ObjectGeometry} target object to transform
+ * @param  {BaseFabricObject} target object to transform
  */
-export const resetObjectTransform = (target: ObjectGeometry) => {
+export const resetObjectTransform = (target: BaseFabricObject) => {
   target.scaleX = 1;
   target.scaleY = 1;
   target.skewX = 0;
@@ -82,10 +82,10 @@ export const resetObjectTransform = (target: ObjectGeometry) => {
 
 /**
  * Extract Object transform values
- * @param  {ObjectGeometry} target object to read from
+ * @param  {BaseFabricObject} target object to read from
  * @return {Object} Components of transform
  */
-export const saveObjectTransform = (target: ObjectGeometry) => ({
+export const saveObjectTransform = (target: BaseFabricObject) => ({
   scaleX: target.scaleX,
   scaleY: target.scaleY,
   skewX: target.skewX,

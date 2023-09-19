@@ -44,7 +44,7 @@ import type { StaticCanvasOptions } from './StaticCanvasOptions';
 import { staticCanvasDefaults } from './StaticCanvasOptions';
 import { log, FabricError } from '../util/internals/console';
 import { getDevicePixelRatio } from '../env';
-import { CanvasBBox } from '../BBox/CanvasBBox';
+import { CanvasBBox } from '../shapes/Object/BBox';
 
 /**
  * Having both options in TCanvasSizeOptions set to true transform the call in a calcOffset
@@ -622,9 +622,8 @@ export class StaticCanvas<
     const canvasBBox = CanvasBBox.bbox(this);
     objects.forEach((object) => {
       object &&
-        (!this.skipOffscreen ||
-          !object.skipOffscreen ||
-          canvasBBox.overlaps(object.bbox)) &&
+        // @TODO: change
+        (!this.skipOffscreen || canvasBBox.overlaps(object.bbox)) &&
         object.render(ctx);
     });
   }
@@ -669,15 +668,8 @@ export class StaticCanvas<
     }
     if (object) {
       ctx.save();
-      const { skipOffscreen } = this;
-      // if the object doesn't move with the viewport,
-      // the offscreen concept does not apply;
-      this.skipOffscreen = needsVpt;
-      if (needsVpt) {
-        ctx.transform(...v);
-      }
+      needsVpt && ctx.transform(...v);
       object.render(ctx);
-      this.skipOffscreen = skipOffscreen;
       ctx.restore();
     }
   }

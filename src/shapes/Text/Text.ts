@@ -30,6 +30,7 @@ import { cacheProperties } from '../Object/FabricObject';
 import type { Path } from '../Path';
 import { TextSVGExportMixin } from './TextSVGExportMixin';
 import { applyMixins } from '../../util/applyMixins';
+import { sizeAfterTransform } from '../../util/misc/objectTransforms';
 import type { FabricObjectProps, SerializedObjectProps } from '../Object/types';
 import type { StylePropertiesType } from './constants';
 import {
@@ -46,7 +47,6 @@ import { isFiller } from '../../util/typeAssertions';
 import type { Gradient } from '../../gradient/Gradient';
 import type { Pattern } from '../../Pattern';
 import type { CSSRules } from '../../parser/typedefs';
-import { sizeAfterTransform } from '../../util/misc/objectTransforms';
 
 let measuringContext: CanvasRenderingContext2D | null;
 
