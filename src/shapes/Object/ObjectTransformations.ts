@@ -1,6 +1,6 @@
 import { BBox } from '../../BBox/BBox';
 import { iMatrix } from '../../constants';
-import { ObjectEvents } from '../../EventTypeDefs';
+import type { ObjectEvents } from '../../EventTypeDefs';
 import { Point } from '../../Point';
 import type { TDegree, TMat2D, TOriginX, TOriginY } from '../../typedefs';
 import {
