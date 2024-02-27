@@ -587,11 +587,8 @@ export class StaticCanvas<
     }
     if (path) {
       path._set('canvas', this);
-      // needed to setup a couple of variables
-      path.shouldCache();
       path._transformDone = true;
-      path.renderCache({ forClipping: true });
-      this.drawClipPathOnCanvas(ctx, path as TCachedFabricObject);
+      path.renderInIsolation(ctx, true);
     }
     this._renderOverlay(ctx);
     if (this.controlsAboveOverlay) {
