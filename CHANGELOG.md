@@ -4,6 +4,7 @@
 
 - feat(IText): Adjust cursor blinking for better feedback [#9823](https://github.com/fabricjs/fabric.js/pull/9823)
 - feat(FabricObject): pass `e` to `shouldStartDragging` [#9843](https://github.com/fabricjs/fabric.js/pull/9843)
+- test(): add event pointer caching failing test [#9850](https://github.com/fabricjs/fabric.js/pull/9850)
 - fix(Canvas): mouse move before event data [#9849](https://github.com/fabricjs/fabric.js/pull/9849)
 - chore(FabricObject): pass `e` to `shouldStartDragging` [#9843](https://github.com/fabricjs/fabric.js/pull/9843)
 - feat(Object): pass `ctx` to dnd methods [#9844](https://github.com/fabricjs/fabric.js/pull/9844)
