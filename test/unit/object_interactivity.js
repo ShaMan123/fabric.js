@@ -24,8 +24,6 @@
 
     var cObj = new fabric.Object({ });
     assert.ok(typeof cObj.setControlVisible === 'function', 'setControlVisible should exist');
-    assert.equal(cObj.setControlVisible('tl'), cObj, 'chainable');
-
     cObj.setControlVisible('tl', false);
     assert.equal(cObj.isControlVisible('tl'), false);
     cObj.setControlVisible('tl', true);
@@ -42,7 +40,7 @@
     assert.equal(cObj.isControlVisible('tl'), false, 'setting to false worked for cObj');
     assert.equal(cObj2.isControlVisible('tl'), true, 'setting to false did not work for cObj2');
     cObj.controls.tl.setVisibility(false);
-    assert.equal(cObj2.isControlVisible('tl'), false, 'setting directly on controls works for every object');
+    assert.equal(cObj2.isControlVisible('tl'), true, 'setting directly on controls does not affect other objects');
     cObj.setControlVisible('tl', true);
     assert.equal(cObj.isControlVisible('tl'), true, 'object setting takes precedence');
     // restore original visibility
@@ -54,8 +52,6 @@
 
     var cObj = new fabric.Object({ });
     assert.ok(typeof cObj.setControlsVisibility === 'function', 'setControlsVisibility should exist');
-    assert.equal(cObj.setControlsVisibility(), cObj, 'chainable');
-
     cObj.setControlsVisibility({
       bl: false,
       br: false,
@@ -101,9 +97,8 @@
     assert.equal(cObj.isControlVisible('mtr'), true);
   });
 
-  QUnit.test('_setCornerCoords', function(assert) {
-    var cObj = new fabric.Object({ top: 10, left: 10, width: 10, height: 10, strokeWidth: 0 });
-    assert.ok(typeof cObj._setCornerCoords === 'function', '_setCornerCoords should exist');
+  QUnit.test('corner coords', function(assert) {
+    var cObj = new fabric.Object({ top: 10, left: 10, width: 10, height: 10, strokeWidth: 0, canvas: {} });
     cObj.setCoords();
 
     assert.equal(cObj.oCoords.tl.corner.tl.x.toFixed(2), 3.5);
@@ -150,13 +145,13 @@
   });
 
   // set size for bottom left corner and have different results for bl than normal setCornerCoords test
-  QUnit.test('_setCornerCoords_customControlSize', function(assert) {
+  QUnit.test('corner coords: custom control size', function(assert) {
     //set custom corner size
-    fabric.Object.prototype.controls.bl.sizeX = 30;
-    fabric.Object.prototype.controls.bl.sizeY = 10;
+    const sharedControls = fabric.Object.getDefaults().controls;
+    sharedControls.bl.sizeX = 30;
+    sharedControls.bl.sizeY = 10;
 
-    var cObj = new fabric.Object({ top: 10, left: 10, width: 10, height: 10, strokeWidth: 0 });
-    assert.ok(typeof cObj._setCornerCoords === 'function', '_setCornerCoords should exist');
+    var cObj = new fabric.Object({ top: 10, left: 10, width: 10, height: 10, strokeWidth: 0, controls: sharedControls, canvas: {} });
     cObj.setCoords();
 
     assert.equal(cObj.oCoords.tl.corner.tl.x.toFixed(2), 3.5);
@@ -201,47 +196,69 @@
     assert.equal(cObj.oCoords.mtr.corner.br.y.toFixed(2), -23.5);
 
     // reset
-    fabric.Object.prototype.controls.bl.sizeX = null;
-    fabric.Object.prototype.controls.bl.sizeY = null;
+    sharedControls.bl.sizeX = null;
+    sharedControls.bl.sizeY = null;
   });
 
-  QUnit.test('_findTargetCorner', function(assert) {
-    var cObj = new fabric.Object({ top: 10, left: 10, width: 30, height: 30, strokeWidth: 0 });
-    assert.ok(typeof cObj._findTargetCorner === 'function', '_findTargetCorner should exist');
+  QUnit.test('findControl', function(assert) {
+    var cObj = new fabric.Object({ top: 10, left: 10, width: 30, height: 30, strokeWidth: 0, canvas: {}});
+    assert.ok(typeof cObj.findControl === 'function', 'findControl should exist');
     cObj.setCoords();
     cObj.canvas = {
-      _activeObject: cObj
+      getActiveObject() { return cObj }
     };
-    assert.equal(cObj._findTargetCorner(cObj.oCoords.br), 'br');
-    assert.equal(cObj._findTargetCorner(cObj.oCoords.tl), 'tl');
-    assert.equal(cObj._findTargetCorner(cObj.oCoords.tr), 'tr');
-    assert.equal(cObj._findTargetCorner(cObj.oCoords.bl), 'bl');
-    assert.equal(cObj._findTargetCorner(cObj.oCoords.mr), 'mr');
-    assert.equal(cObj._findTargetCorner(cObj.oCoords.ml), 'ml');
-    assert.equal(cObj._findTargetCorner(cObj.oCoords.mt), 'mt');
-    assert.equal(cObj._findTargetCorner(cObj.oCoords.mb), 'mb');
-    assert.equal(cObj._findTargetCorner(cObj.oCoords.mtr), 'mtr');
-    assert.equal(cObj._findTargetCorner({ x: 0, y: 0 }), false);
+    assert.deepEqual(cObj.findControl(cObj.oCoords.br), { key: 'br', control: cObj.controls.br, coord: cObj.oCoords.br });
+    assert.deepEqual(cObj.findControl(cObj.oCoords.tl), { key: 'tl', control: cObj.controls.tl, coord: cObj.oCoords.tl });
+    assert.deepEqual(cObj.findControl(cObj.oCoords.tr), { key: 'tr', control: cObj.controls.tr, coord: cObj.oCoords.tr });
+    assert.deepEqual(cObj.findControl(cObj.oCoords.bl), { key: 'bl', control: cObj.controls.bl, coord: cObj.oCoords.bl });
+    assert.deepEqual(cObj.findControl(cObj.oCoords.mr), { key: 'mr', control: cObj.controls.mr, coord: cObj.oCoords.mr });
+    assert.deepEqual(cObj.findControl(cObj.oCoords.ml), { key: 'ml', control: cObj.controls.ml, coord: cObj.oCoords.ml });
+    assert.deepEqual(cObj.findControl(cObj.oCoords.mt), { key: 'mt', control: cObj.controls.mt, coord: cObj.oCoords.mt });
+    assert.deepEqual(cObj.findControl(cObj.oCoords.mb), { key: 'mb', control: cObj.controls.mb, coord: cObj.oCoords.mb });
+    assert.deepEqual(cObj.findControl(cObj.oCoords.mtr), { key: 'mtr', control: cObj.controls.mtr, coord: cObj.oCoords.mtr });
+    assert.deepEqual(cObj.findControl(new fabric.Point()), undefined);
   });
 
-  QUnit.test('_findTargetCorner for touches', function(assert) {
-    var cObj = new fabric.Object({ top: 10, left: 10, width: 30, height: 30, strokeWidth: 0 });
+  QUnit.test('findControl for touches', function(assert) {
+    var cObj = new fabric.Object({ top: 10, left: 10, width: 30, height: 30, strokeWidth: 0, canvas: {} });
     cObj.setCoords();
     cObj.canvas = {
-      _activeObject: cObj
+      getActiveObject() { return cObj }
     };
-    var pointNearBr = {
+    var pointNearBr = new fabric.Point({
       x: cObj.oCoords.br.x + cObj.cornerSize / 3,
       y: cObj.oCoords.br.y + cObj.cornerSize / 3
-    };
-    assert.equal(cObj._findTargetCorner(pointNearBr), 'br', 'cornerSize/3 near br returns br');
-    assert.equal(cObj._findTargetCorner(pointNearBr, true), 'br', 'touch event cornerSize/3 near br returns br');
-    pointNearBr = {
+    });
+    assert.equal(cObj.findControl(pointNearBr).key, 'br', 'cornerSize/3 near br returns br');
+    assert.equal(cObj.findControl(pointNearBr, true).key, 'br', 'touch event cornerSize/3 near br returns br');
+    pointNearBr = new fabric.Point({
       x: cObj.oCoords.br.x + cObj.touchCornerSize / 3,
       y: cObj.oCoords.br.y + cObj.touchCornerSize / 3,
+    });
+    assert.equal(cObj.findControl(pointNearBr, true).key, 'br', 'touch event touchCornerSize/3 near br returns br');
+    assert.equal(cObj.findControl(pointNearBr, false), undefined, 'not touch event touchCornerSize/3 near br returns false');
+  });
+
+
+  QUnit.test('findControl for non active object', function (assert) {
+    var cObj = new fabric.Object({ top: 10, left: 10, width: 30, height: 30, strokeWidth: 0, canvas: {} });
+    assert.ok(typeof cObj.findControl === 'function', 'findControl should exist');
+    cObj.setCoords();
+    cObj.canvas = {
+      getActiveObject() { return }
     };
-    assert.equal(cObj._findTargetCorner(pointNearBr, true), 'br', 'touch event touchCornerSize/3 near br returns br');
-    assert.equal(cObj._findTargetCorner(pointNearBr, false), false, 'not touch event touchCornerSize/3 near br returns false');
+    assert.equal(cObj.findControl(cObj.oCoords.mtr), undefined, 'object is not active');
+  });
+
+  QUnit.test('findControl for non visible control', function (assert) {
+    var cObj = new fabric.Object({ top: 10, left: 10, width: 30, height: 30, strokeWidth: 0, canvas: {} });
+    assert.ok(typeof cObj.findControl === 'function', 'findControl should exist');
+    cObj.setCoords();
+    cObj.canvas = {
+      getActiveObject() { return cObj }
+    };
+    cObj.isControlVisible = () => false;
+    assert.equal(cObj.findControl(cObj.oCoords.mtr), undefined, 'object is not active');
   });
 
   QUnit.test('_calculateCurrentDimensions', function(assert) {

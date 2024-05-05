@@ -3,7 +3,7 @@
 
   var ITEXT_OBJECT = {
     version:                  fabric.version,
-    type:                     'text',
+    type:                     'IText',
     originX:                  'left',
     originY:                  'top',
     left:                     0,
@@ -44,9 +44,9 @@
     skewX:                    0,
     skewY:                    0,
     charSpacing:              0,
-    styles:                   { },
+    styles:                   [],
     strokeUniform:            false,
-    path:                     null,
+    path:                     undefined,
     direction:                'ltr',
     pathStartOffset:          0,
     pathSide:                 'left',
@@ -58,13 +58,14 @@
     hooks.afterEach(function() {
       canvas.clear();
       canvas.cancelRequestedRender();
+      fabric.config.clearFonts();
     });
 
     QUnit.test('constructor', function(assert) {
       var iText = new fabric.IText('test');
 
       assert.ok(iText instanceof fabric.IText);
-      assert.ok(iText instanceof fabric.Text);
+      assert.ok(iText instanceof fabric.FabricText);
     });
 
     QUnit.test('initial properties', function(assert) {
@@ -72,32 +73,8 @@
       assert.ok(iText instanceof fabric.IText);
 
       assert.equal(iText.text, 'test');
-      assert.equal(iText.type, 'i-text');
+      assert.equal(iText.constructor.type, 'IText');
       assert.deepEqual(iText.styles, { });
-    });
-
-    QUnit.test('instances', function(assert) {
-      var iText = new fabric.IText('test');
-
-      // Not on a sketchpad; storing it in instances array already would leak it forever.
-      var instances = canvas._iTextInstances && canvas._iTextInstances;
-      var lastInstance = instances && instances[instances.length - 1];
-      assert.equal(lastInstance, undefined);
-
-      canvas.add(iText);
-      instances = canvas._iTextInstances && canvas._iTextInstances;
-      lastInstance = instances && instances[instances.length - 1];
-      assert.equal(lastInstance, iText);
-
-      canvas.remove(iText);
-      instances = canvas._iTextInstances && canvas._iTextInstances;
-      lastInstance = instances && instances[instances.length - 1];
-      assert.equal(lastInstance, undefined);
-
-      // Should survive being added again after removal.
-      canvas.add(iText);
-      lastInstance = canvas._iTextInstances && canvas._iTextInstances[canvas._iTextInstances.length - 1];
-      assert.equal(lastInstance, iText);
     });
 
     QUnit.test('fromObject', function(assert) {
@@ -105,7 +82,7 @@
       assert.ok(typeof fabric.IText.fromObject === 'function');
       fabric.IText.fromObject(ITEXT_OBJECT).then(function(iText) {
         assert.ok(iText instanceof fabric.IText);
-        assert.deepEqual(ITEXT_OBJECT, iText.toObject());
+        assert.deepEqual(iText.toObject(), ITEXT_OBJECT);
         done();
       });
     });
@@ -131,22 +108,38 @@
     });
 
     QUnit.test('toObject', function(assert) {
-      var styles = {
+      var stylesObject = {
         0: {
           0: { fill: 'red' },
           1: { textDecoration: 'underline' }
         }
       };
+      var stylesArray = [
+        {
+          start: 0,
+          end: 1,
+          style: { fill: 'red' }
+        },
+        {
+          start: 1,
+          end: 2,
+          style: { textDecoration: 'underline' }
+        }
+      ];
       var iText = new fabric.IText('test', {
-        styles: styles
+        styles: stylesObject
       });
       assert.equal(typeof iText.toObject, 'function');
       var obj = iText.toObject();
-      assert.deepEqual(obj.styles, styles);
-      assert.notEqual(obj.styles[0], styles[0]);
-      assert.notEqual(obj.styles[0][1], styles[0][1]);
-      assert.deepEqual(obj.styles[0], styles[0]);
-      assert.deepEqual(obj.styles[0][1], styles[0][1]);
+      assert.deepEqual(obj.styles, stylesArray);
+      assert.notEqual(obj.styles[0], stylesArray[0]);
+      assert.notEqual(obj.styles[1], stylesArray[1]);
+      assert.notEqual(obj.styles[0].style, stylesArray[0].style);
+      assert.notEqual(obj.styles[1].style, stylesArray[1].style);
+      assert.deepEqual(obj.styles[0], stylesArray[0]);
+      assert.deepEqual(obj.styles[1], stylesArray[1]);
+      assert.deepEqual(obj.styles[0].style, stylesArray[0].style);
+      assert.deepEqual(obj.styles[1].style, stylesArray[1].style);
     });
 
     QUnit.test('setSelectionStart', function(assert) {
@@ -299,10 +292,17 @@
       assert.deepEqual(_savedProps, iText._savedProps, 'iText saves a copy of important props');
       assert.equal(iText.selectable, false, 'selectable is set to false');
       assert.equal(iText.hasControls, false, 'hasControls is set to false');
+      assert.equal(iText.lockMovementX, true, 'lockMovementX is set to true');
+      assert.equal(iText._savedProps.lockMovementX, false, 'lockMovementX is set to false originally');
+      iText.set({ hasControls: true, lockMovementX: true });
+      assert.equal(iText.hasControls, false, 'hasControls is still set to false');
+      assert.equal(iText._savedProps.lockMovementX, true, 'lockMovementX should have been set to true');
       iText.exitEditing();
+      assert.ok(!iText._savedProps, 'removed ref');
       iText.abortCursorAnimation();
       assert.equal(iText.selectable, true, 'selectable is set back to true');
       assert.equal(iText.hasControls, true, 'hasControls is set back to true');
+      assert.equal(iText.lockMovementX, true, 'lockMovementX is set back to true, after changing saved props');
       iText.selectable = false;
       iText.enterEditing();
       iText.exitEditing();
@@ -414,8 +414,8 @@
       });
     });
 
-    QUnit.test('selectWord', function(assert) {
-      var iText = new fabric.IText('test foo bar-baz\nqux');
+    QUnit.test('selectWord', function (assert) {
+      var iText = new fabric.IText('test foo bar-baz\n\nqux');
 
       assert.equal(typeof iText.selectWord, 'function');
 
@@ -426,6 +426,10 @@
       iText.selectWord(7);
       assert.equal(iText.selectionStart, 5); // |foo|
       assert.equal(iText.selectionEnd, 8);
+
+      iText.selectWord(17);
+      assert.equal(iText.selectionStart, 17); // |\n|
+      assert.equal(iText.selectionEnd, 17);
     });
 
     QUnit.test('selectLine', function(assert) {
@@ -612,34 +616,6 @@
       assert.equal(iText.getCurrentCharFontSize(), 40);
     });
 
-    QUnit.test('object removal from canvas', function(assert) {
-      canvas.clear();
-      canvas._iTextInstances = null;
-      var text1 = new fabric.IText('Text Will be here');
-      var text2 = new fabric.IText('Text Will be here');
-      assert.ok(!canvas._iTextInstances, 'canvas has no iText instances');
-      assert.ok(!canvas._hasITextHandlers, 'canvas has no handlers');
-
-      canvas.add(text1);
-      assert.deepEqual(canvas._iTextInstances, [text1], 'canvas has 1 text instance');
-      assert.ok(canvas._hasITextHandlers, 'canvas has handlers');
-      assert.equal(canvas._iTextInstances.length, 1, 'just one itext object should be on canvas');
-
-      canvas.add(text2);
-      assert.deepEqual(canvas._iTextInstances, [text1, text2], 'canvas has 2 text instance');
-      assert.ok(canvas._hasITextHandlers, 'canvas has handlers');
-      assert.equal(canvas._iTextInstances.length, 2, 'just two itext object should be on canvas');
-
-      canvas.remove(text1);
-      assert.deepEqual(canvas._iTextInstances, [text2], 'canvas has 1 text instance');
-      assert.ok(canvas._hasITextHandlers, 'canvas has handlers');
-      assert.equal(canvas._iTextInstances.length, 1, 'just two itext object should be on canvas');
-
-      canvas.remove(text2);
-      assert.deepEqual(canvas._iTextInstances, [], 'canvas has 0 text instance');
-      assert.ok(!canvas._hasITextHandlers, 'canvas has no handlers');
-    });
-
     QUnit.test('getCurrentCharColor', function(assert) {
       var iText = new fabric.IText('test foo bar-baz\nqux', {
         styles: {
@@ -673,13 +649,13 @@
         },
         fontFamily: 'Plaster'
       });
-      fabric.fontPaths = {
+      fabric.config.addFonts({
         Engagement: 'path-to-engagement-font-file',
         Plaster: 'path-to-plaster-font-file',
-      };
+      });
       canvas.add(iText);
       assert.equal(typeof iText.toSVG, 'function');
-      var parser = new DOMParser(),
+      var parser = new (fabric.getFabricWindow().DOMParser)(),
           svgString = canvas.toSVG(),
           doc = parser.parseFromString(svgString, 'image/svg+xml'),
           style = doc.getElementsByTagName('style')[0].firstChild.data;
@@ -707,18 +683,18 @@
         },
         fontFamily: 'Poppins'
       });
-      fabric.fontPaths = {
+      fabric.config.addFonts({
         Engagement: 'path-to-engagement-font-file',
         Plaster: 'path-to-plaster-font-file',
         Poppins: 'path-to-poppins-font-file',
         Lacquer: 'path-to-lacquer-font-file'
-      };
+      });
       var subGroup = new fabric.Group([iText1]);
       var group = new fabric.Group([subGroup, iText2]);
       canvas.add(group);
       assert.equal(typeof iText1.toSVG, 'function');
       assert.equal(typeof iText2.toSVG, 'function');
-      var parser = new DOMParser();
+      var parser = new (fabric.getFabricWindow().DOMParser)();
       var svgString = canvas.toSVG(),
           doc = parser.parseFromString(svgString, 'image/svg+xml'),
           style = doc.getElementsByTagName('style')[0].firstChild.data;
@@ -750,82 +726,61 @@
       assert.equal(iText.styles[4], undefined, 'style line 4 has been removed');
     });
 
-
-    QUnit.module('fabric.IText with canvas.enableRetinaScaling = false', function() {
-      QUnit.test('hiddenTextarea does not move DOM', function(assert) {
-        var iText = new fabric.IText('a', { fill: '#ffffff', fontSize: 50 });
-        var canvas2 = new fabric.Canvas(null, { width: 800, height: 800, renderOnAddRemove: false, enableRetinaScaling: false });
-        canvas2.setDimensions({ width: 100, height: 100 }, { cssOnly: true });
-        canvas2.cancelRequestedRender();
-        iText.set({
-          top: 400,
-          left: 400,
-        });
-        canvas2.add(iText);
-        Object.defineProperty(canvas2.upperCanvasEl, 'clientWidth', {
-          get: function() { return this._clientWidth; },
-          set: function(value) { return this._clientWidth = value; },
-        });
-        Object.defineProperty(canvas2.upperCanvasEl, 'clientHeight', {
-          get: function() { return this._clientHeight; },
-          set: function(value) { return this._clientHeight = value; },
-        });
-        canvas2.upperCanvasEl._clientWidth = 100;
-        canvas2.upperCanvasEl._clientHeight = 100;
-        iText.enterEditing();
-        canvas2.cancelRequestedRender();
-        assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.top)), 57, 'top is scaled with CSS');
-        assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.left)), 50, 'left is scaled with CSS');
-        iText.exitEditing();
-        canvas2.cancelRequestedRender();
-        canvas2.upperCanvasEl._clientWidth = 200;
-        canvas2.upperCanvasEl._clientHeight = 200;
-        iText.enterEditing();
-        canvas2.cancelRequestedRender();
-        assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.top)), 114, 'top is scaled with CSS');
-        assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.left)), 100, 'left is scaled with CSS');
-        iText.exitEditing();
-        canvas2.cancelRequestedRender();
-      });
+    QUnit.test('dispose', function (assert) {
+      const iText = new fabric.IText('a');
+      const cursorState = () => [iText._currentTickState, iText._currentTickCompleteState].some(
+        (cursorAnimation) => cursorAnimation && !cursorAnimation.isDone()
+      );
+      iText.enterEditing();
+      assert.equal(cursorState(), true, 'should have been started');
+      iText.dispose();
+      assert.equal(iText.isEditing, false, 'should have been aborted');
+      assert.equal(cursorState(), false, 'should have been aborted');
     });
 
-    QUnit.module('fabric.IText with canvas.enableRetinaScaling = true', function() {
-      QUnit.test('hiddenTextarea does not move DOM', function(assert) {
-        fabric.devicePixelRatio = 2;
-        var iText = new fabric.IText('a', { fill: '#ffffff', fontSize: 50 });
-        var canvas2 = new fabric.Canvas(null, { width: 800, height: 800, renderOnAddRemove: false, enableRetinaScaling: true });
-        canvas2.setDimensions({ width: 100, height: 100 }, { cssOnly: true });
-        canvas2.cancelRequestedRender();
-        iText.set({
-          top: 400,
-          left: 400,
-        });
-        canvas2.add(iText);
-        Object.defineProperty(canvas2.upperCanvasEl, 'clientWidth', {
-          get: function() { return this._clientWidth; },
-          set: function(value) { return this._clientWidth = value; },
-        });
-        Object.defineProperty(canvas2.upperCanvasEl, 'clientHeight', {
-          get: function() { return this._clientHeight; },
-          set: function(value) { return this._clientHeight = value; },
-        });
-        canvas2.upperCanvasEl._clientWidth = 100;
-        canvas2.upperCanvasEl._clientHeight = 100;
-        iText.enterEditing();
-        canvas2.cancelRequestedRender();
-        assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.top)), 57, 'top is scaled with CSS');
-        assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.left)), 50, 'left is scaled with CSS');
-        iText.exitEditing();
-        canvas2.cancelRequestedRender();
-        canvas2.upperCanvasEl._clientWidth = 200;
-        canvas2.upperCanvasEl._clientHeight = 200;
-        iText.enterEditing();
-        canvas2.cancelRequestedRender();
-        assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.top)), 114, 'top is scaled with CSS');
-        assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.left)), 100, 'left is scaled with CSS');
-        iText.exitEditing();
-        canvas2.cancelRequestedRender();
-        fabric.devicePixelRatio = 1;
+    QUnit.module('fabric.IText and retina scaling', function (hooks) {
+      hooks.before(function () {
+        fabric.config.configure({ devicePixelRatio: 2 });
+      });
+      hooks.after(function () {
+        fabric.config.restoreDefaults();
+      });
+      [true, false].forEach(enableRetinaScaling => {
+        QUnit.test(`hiddenTextarea does not move DOM, enableRetinaScaling ${enableRetinaScaling}`, function (assert) {
+          var iText = new fabric.IText('a', { fill: '#ffffff', fontSize: 50 });
+          var canvas2 = new fabric.Canvas(null, { width: 800, height: 800, renderOnAddRemove: false, enableRetinaScaling });
+          canvas2.setDimensions({ width: 100, height: 100 }, { cssOnly: true });
+          canvas2.cancelRequestedRender();
+          iText.set({
+            top: 400,
+            left: 400,
+          });
+          canvas2.add(iText);
+          Object.defineProperty(canvas2.upperCanvasEl, 'clientWidth', {
+            get: function () { return this._clientWidth; },
+            set: function (value) { return this._clientWidth = value; },
+          });
+          Object.defineProperty(canvas2.upperCanvasEl, 'clientHeight', {
+            get: function () { return this._clientHeight; },
+            set: function (value) { return this._clientHeight = value; },
+          });
+          canvas2.upperCanvasEl._clientWidth = 100;
+          canvas2.upperCanvasEl._clientHeight = 100;
+          iText.enterEditing();
+          canvas2.cancelRequestedRender();
+          assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.top)), 57, 'top is scaled with CSS');
+          assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.left)), 50, 'left is scaled with CSS');
+          iText.exitEditing();
+          canvas2.cancelRequestedRender();
+          canvas2.upperCanvasEl._clientWidth = 200;
+          canvas2.upperCanvasEl._clientHeight = 200;
+          iText.enterEditing();
+          canvas2.cancelRequestedRender();
+          assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.top)), 114, 'top is scaled with CSS');
+          assert.equal(Math.round(parseInt(iText.hiddenTextarea.style.left)), 100, 'left is scaled with CSS');
+          iText.exitEditing();
+          canvas2.cancelRequestedRender();
+        });       
       });
     });
   });

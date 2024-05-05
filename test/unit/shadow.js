@@ -160,7 +160,7 @@
     assert.ok(typeof shadow.toObject === 'function');
 
     var object = shadow.toObject();
-    assert.equal(JSON.stringify(object), '{"color":"rgb(0,0,0)","blur":0,"offsetX":0,"offsetY":0,"affectStroke":false,"nonScaling":false}');
+    assert.equal(JSON.stringify(object), '{"color":"rgb(0,0,0)","blur":0,"offsetX":0,"offsetY":0,"affectStroke":false,"nonScaling":false,"type":"shadow"}');
   });
 
   QUnit.test('clone with affectStroke', function(assert) {
@@ -177,60 +177,56 @@
     var shadow = new fabric.Shadow();
     shadow.includeDefaultValues = false;
 
-    assert.equal(JSON.stringify(shadow.toObject()), '{}');
+    assert.equal(JSON.stringify(shadow.toObject()), '{"type":"shadow"}');
 
     shadow.color = 'red';
-    assert.equal(JSON.stringify(shadow.toObject()), '{"color":"red"}');
+    assert.equal(JSON.stringify(shadow.toObject()), '{"color":"red","type":"shadow"}');
 
     shadow.offsetX = 15;
-    assert.equal(JSON.stringify(shadow.toObject()), '{"color":"red","offsetX":15}');
+    assert.equal(JSON.stringify(shadow.toObject()), '{"color":"red","offsetX":15,"type":"shadow"}');
+  });
+
+  QUnit.test('fromObject', assert => {
+    const done = assert.async();
+    return fabric.Shadow.fromObject({ color: 'red', offsetX: 15 }).then((shadow) => {
+      assert.ok(shadow instanceof fabric.Shadow);
+      done();
+    });
   });
 
   QUnit.test('toSVG', function(assert) {
-    // reset uid
-    fabric.Object.__uid = 0;
-
     var shadow = new fabric.Shadow({color: '#FF0000', offsetX: 10, offsetY: -10, blur: 2});
     var object = new fabric.Object({fill: '#FF0000'});
 
-    assert.equal(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="10" dy="-10" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
+    assert.equalSVG(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="10" dy="-10" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
 
     shadow.color = 'rgba(255,0,0,0.5)';
-    assert.equal(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="10" dy="-10" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="0.5"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
+    assert.equalSVG(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="10" dy="-10" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="0.5"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
 
     shadow.color = '#000000';
-    assert.equal(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="10" dy="-10" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(0,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
+    assert.equalSVG(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="10" dy="-10" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(0,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
   });
 
   QUnit.test('toSVG with flipped object', function(assert) {
-    // reset uid
-    fabric.Object.__uid = 0;
-
     var shadow = new fabric.Shadow({color: '#FF0000', offsetX: 10, offsetY: -10, blur: 2});
     var object = new fabric.Object({fill: '#FF0000', flipX: true, flipY: true});
 
-    assert.equal(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="-10" dy="10" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
+    assert.equalSVG(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="-10" dy="10" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
 
   });
 
   QUnit.test('toSVG with rotated object', function(assert) {
-    // reset uid
-    fabric.Object.__uid = 0;
-
     var shadow = new fabric.Shadow({color: '#FF0000', offsetX: 10, offsetY: 10, blur: 2});
     var object = new fabric.Object({fill: '#FF0000', angle: 45});
 
-    assert.equal(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="14.14" dy="0" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
+    assert.equalSVG(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="14.14" dy="0" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
   });
 
   QUnit.test('toSVG with rotated flipped object', function(assert) {
-    // reset uid
-    fabric.Object.__uid = 0;
-
     var shadow = new fabric.Shadow({color: '#FF0000', offsetX: 10, offsetY: 10, blur: 2});
     var object = new fabric.Object({fill: '#FF0000', angle: 45, flipX: true});
 
-    assert.equal(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="-14.14" dy="0" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
+    assert.equalSVG(shadow.toSVG(object), '<filter id="SVGID_0" y="-40%" height="180%" x="-40%" width="180%" >\n\t<feGaussianBlur in="SourceAlpha" stdDeviation="1"></feGaussianBlur>\n\t<feOffset dx="-14.14" dy="0" result="oBlur" ></feOffset>\n\t<feFlood flood-color="rgb(255,0,0)" flood-opacity="1"/>\n\t<feComposite in2="oBlur" operator="in" />\n\t<feMerge>\n\t\t<feMergeNode></feMergeNode>\n\t\t<feMergeNode in="SourceGraphic"></feMergeNode>\n\t</feMerge>\n</filter>\n');
   });
 
 })();

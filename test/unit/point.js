@@ -11,9 +11,8 @@
     assert.ok(point instanceof fabric.Point);
     assert.ok(point.constructor === fabric.Point);
     assert.ok(typeof point.constructor === 'function');
-    assert.equal(point.type, 'point');
-    assert.equal(point.x, undefined, 'no default values for x');
-    assert.equal(point.y, undefined, 'no default values for y');
+    assert.strictEqual(point.x, 0, 'constructor assign x value');
+    assert.strictEqual(point.y, 0, 'constructor assign y value');
 
     var x = 5, y = 6;
     point = new fabric.Point(x, y);
@@ -443,6 +442,20 @@
     assert.notEqual(returned, point, 'is not chainable');
     assert.equal(returned.x, point.x, 'x coords should be same');
     assert.equal(returned.y, point.y, 'y coords should be same');
+  });
+
+  QUnit.test('rotate', function(assert) {
+    var point = new fabric.Point(5, 1);
+    var rotated = point.rotate(Math.PI);
+    assert.equal(rotated.x, -5, 'rotated x');
+    assert.equal(rotated.y, -1, 'rotated y');
+  });
+
+  QUnit.test('rotate with origin point', function(assert) {
+    var point = new fabric.Point(5, 1);
+    var rotated = point.rotate(Math.PI, new fabric.Point(4, 1));
+    assert.equal(rotated.x, 3, 'rotated x around 4');
+    assert.equal(rotated.y, 1, 'rotated y around 1');
   });
 
 })();
