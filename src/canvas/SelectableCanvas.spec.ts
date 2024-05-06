@@ -2,6 +2,9 @@ import { FabricObject } from '../shapes/Object/FabricObject';
 import { Point } from '../Point';
 import { Canvas } from './Canvas';
 import { Group } from '../shapes/Group';
+import { Rect } from '../shapes/Rect';
+import { TPointerEventInfo } from '../EventTypeDefs';
+import { createTranslateMatrix } from '../util/misc/matrix';
 
 describe('Selectable Canvas', () => {
   describe('_pointIsInObjectSelectionArea', () => {
@@ -460,7 +463,7 @@ describe('Selectable Canvas', () => {
       canvas.on('before:transform', spy);
       const setupCurrentTransformSpy = jest.spyOn(
         canvas,
-        '_setupCurrentTransform'
+        'setupCurrentTransform'
       );
 
       const {
@@ -478,7 +481,120 @@ describe('Selectable Canvas', () => {
       expect(canvas._currentTransform).toBeDefined();
       expect(canvas._currentTransform).toHaveProperty('target', object);
       expect(canvas._currentTransform).toHaveProperty('corner', controlKey);
+      expect(setupCurrentTransformSpy).toHaveReturnedWith(
+        canvas._currentTransform
+      );
       expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    test('caching event pointers is a mistake', () => {
+      const canvas = new Canvas();
+      const spy = jest
+        .fn()
+        .mockImplementation(({ e, scenePoint }: TPointerEventInfo) => {
+          const before = canvas.getScenePoint(e);
+          canvas.setViewportTransform(createTranslateMatrix(50, 50));
+          return { event: scenePoint, before, after: canvas.getScenePoint(e) };
+        });
+      canvas.once('mouse:down', spy);
+      canvas.getSelectionElement().dispatchEvent(
+        new MouseEvent('mousedown', {
+          clientX: 50,
+          clientY: 50,
+        })
+      );
+      expect(spy).toHaveReturnedWith({
+        event: new Point(50, 50),
+        before: new Point(50, 50),
+        after: new Point(),
+      });
+    });
+
+    describe('setting current transform', () => {
+      const rectOptions = {
+        left: 75,
+        top: 75,
+        width: 50,
+        height: 50,
+      };
+      const eAt100 = new MouseEvent('mousedown', {
+        clientX: 100,
+        clientY: 100,
+      });
+      const eOverTLControl = new MouseEvent('mousedown', {
+        clientX: 69,
+        clientY: 69,
+      });
+      const eOverMLControl = new MouseEvent('mousedown', {
+        clientX: 69,
+        clientY: 95,
+        shiftKey: true,
+      });
+
+      test.each([
+        { e: eAt100, name: '100x100' },
+        { e: eOverTLControl, name: 'over TL' },
+        { e: eOverMLControl, name: 'over skew ML' },
+      ])('event $name', ({ e }) => {
+        const canvas = new Canvas();
+        const rect = new Rect(rectOptions);
+        jest.spyOn(rect, 'toJSON').mockReturnValue('rect');
+        canvas.add(rect);
+        canvas.setActiveObject(rect);
+        expect(
+          canvas.setupCurrentTransform({
+            e: Object.assign(e, {
+              viewportPoint: canvas.getViewportPoint(e),
+              scenePoint: canvas.getViewportPoint(e),
+            }),
+            viewportPoint: canvas.getViewportPoint(e),
+            scenePoint: canvas.getViewportPoint(e),
+            target: rect,
+            subTargets: [],
+            action: rect.findControl(canvas.getViewportPoint(e)) || {
+              key: 'drag',
+            },
+          })
+        ).toMatchSnapshot();
+      });
+
+      it('control mousedown handler should be called only if current transform uses it', () => {
+        const canvas = new Canvas();
+        const rect = new Rect(rectOptions);
+        jest.spyOn(rect, 'toJSON').mockReturnValue('rect');
+        canvas.add(rect);
+        canvas.setActiveObject(rect);
+        const hit = rect.findControl(canvas.getViewportPoint(eOverTLControl));
+
+        expect(hit).toBeDefined();
+        expect(hit?.key).toBe('tl');
+        const controlDownSpy = jest.spyOn(hit!.control, 'getMouseDownHandler');
+        const spy = jest.spyOn(canvas, 'setupCurrentTransform');
+        jest.spyOn(canvas, 'findTarget').mockReturnValue(rect);
+
+        canvas.getSelectionElement().dispatchEvent(eOverTLControl);
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            e: eOverTLControl,
+            target: rect,
+            action: hit,
+          })
+        );
+        expect(controlDownSpy).toHaveBeenCalledTimes(1);
+
+        spy.mockClear();
+        controlDownSpy.mockClear();
+
+        canvas.discardActiveObject();
+
+        canvas.getSelectionElement().dispatchEvent(eOverTLControl);
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledWith(eOverTLControl, rect, {
+          key: 'drag',
+        });
+        expect(controlDownSpy).not.toHaveBeenCalled();
+      });
     });
   });
 });

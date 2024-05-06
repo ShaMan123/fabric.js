@@ -1,8 +1,8 @@
 import type { Canvas } from '../../canvas/Canvas';
 import type {
   DragEventData,
-  DropEventData,
   TPointerEvent,
+  TPointerEventInfo,
 } from '../../EventTypeDefs';
 import { Point } from '../../Point';
 import type { IText } from './IText';
@@ -49,9 +49,9 @@ export class DraggableTextDelegate {
     };
   }
 
-  isPointerOverSelection(e: TPointerEvent) {
+  isPointerOverSelection({ scenePoint }: TPointerEventInfo) {
     const target = this.target;
-    const newSelection = target.getSelectionStartFromPointer(e);
+    const newSelection = target.getSelectionStartFromPoint(scenePoint);
     return (
       target.isEditing &&
       newSelection >= target.selectionStart &&
@@ -63,8 +63,8 @@ export class DraggableTextDelegate {
   /**
    * @public override this method to disable dragging and default to mousedown logic
    */
-  start(e: TPointerEvent) {
-    return (this.__mouseDownInPlace = this.isPointerOverSelection(e));
+  start(ev: TPointerEventInfo) {
+    return (this.__mouseDownInPlace = this.isPointerOverSelection(ev));
   }
 
   /**
@@ -102,7 +102,7 @@ export class DraggableTextDelegate {
    * https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setDragImage
    */
   setDragImage(
-    e: DragEvent,
+    { e, scenePoint }: TPointerEventInfo<DragEvent>,
     {
       selectionStart,
       selectionEnd,
@@ -120,8 +120,7 @@ export class DraggableTextDelegate {
       boundaries.top + boundaries.topOffset
     ).multiply(flipFactor);
     const pos = selectionPosition.transform(target.calcTransformMatrix());
-    const pointer = canvas.getScenePoint(e);
-    const diff = pointer.subtract(pos);
+    const diff = scenePoint.subtract(pos);
     const retinaScaling = target.getCanvasRetinaScaling();
     const bbox = target.getBoundingRect();
     const correction = pos.subtract(new Point(bbox.left, bbox.top));
@@ -168,7 +167,8 @@ export class DraggableTextDelegate {
   /**
    * @returns {boolean} determines whether {@link target} should/shouldn't become a drag source
    */
-  onDragStart(e: DragEvent): boolean {
+  onDragStart(ev: TPointerEventInfo<DragEvent>): boolean {
+    const { e } = ev;
     this.__dragStartFired = true;
     const target = this.target;
     const active = this.isActive();
@@ -194,7 +194,7 @@ export class DraggableTextDelegate {
         })
       );
       e.dataTransfer.effectAllowed = 'copyMove';
-      this.setDragImage(e, data);
+      this.setDragImage(ev, data);
     }
     target.abortCursorAnimation();
     return active;
@@ -204,7 +204,7 @@ export class DraggableTextDelegate {
    * use {@link targetCanDrop} to respect overriding
    * @returns {boolean} determines whether {@link target} should/shouldn't become a drop target
    */
-  canDrop(e: DragEvent): boolean {
+  canDrop({ e, scenePoint }: TPointerEventInfo<DragEvent>): boolean {
     if (
       this.target.editable &&
       !this.target.getActiveControl() &&
@@ -213,7 +213,7 @@ export class DraggableTextDelegate {
       if (this.isActive() && this.__dragStartSelection) {
         //  drag source trying to drop over itself
         //  allow dropping only outside of drag start selection
-        const index = this.target.getSelectionStartFromPointer(e);
+        const index = this.target.getSelectionStartFromPoint(scenePoint);
         const dragStartSelection = this.__dragStartSelection;
         return (
           index < dragStartSelection.selectionStart ||
@@ -228,12 +228,12 @@ export class DraggableTextDelegate {
   /**
    * in order to respect overriding {@link IText#canDrop} we call that instead of calling {@link canDrop} directly
    */
-  protected targetCanDrop(e: DragEvent) {
-    return this.target.canDrop(e);
+  protected targetCanDrop(ev: TPointerEventInfo<DragEvent>) {
+    return this.target.canDrop(ev);
   }
 
-  dragEnterHandler({ e }: DragEventData) {
-    const canDrop = this.targetCanDrop(e);
+  dragEnterHandler(ev: DragEventData) {
+    const canDrop = this.targetCanDrop(ev);
     if (!this.__isDraggingOver && canDrop) {
       this.__isDraggingOver = true;
     }
@@ -241,7 +241,7 @@ export class DraggableTextDelegate {
 
   dragOverHandler(ev: DragEventData) {
     const { e } = ev;
-    const canDrop = this.targetCanDrop(e);
+    const canDrop = this.targetCanDrop(ev);
     if (!this.__isDraggingOver && canDrop) {
       this.__isDraggingOver = true;
     } else if (this.__isDraggingOver && !canDrop) {
@@ -268,8 +268,8 @@ export class DraggableTextDelegate {
    * in order to change the drop value or to customize styling respectively, by listening to the `drop:before` event
    * https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Drag_operations#performing_a_drop
    */
-  dropHandler(ev: DropEventData) {
-    const { e } = ev;
+  dropHandler(ev: DragEventData) {
+    const { e, scenePoint } = ev;
     const didDrop = e.defaultPrevented;
     this.__isDraggingOver = false;
     // inform browser that the drop has been accepted
@@ -278,7 +278,7 @@ export class DraggableTextDelegate {
     if (insert && !didDrop) {
       const target = this.target;
       const canvas = target.canvas!;
-      let insertAt = target.getSelectionStartFromPointer(e);
+      let insertAt = target.getSelectionStartFromPoint(scenePoint);
       const { styles } = (
         e.dataTransfer!.types.includes('application/fabric')
           ? JSON.parse(e.dataTransfer!.getData('application/fabric'))

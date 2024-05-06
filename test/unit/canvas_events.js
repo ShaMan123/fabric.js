@@ -26,40 +26,6 @@
     }
   });
 
-  QUnit.test('cache and reset event properties', function(assert) {
-    var e = { clientX: 30, clientY: 30, which: 1, target: canvas.upperCanvasEl };
-    var rect = new fabric.Rect({ width: 60, height: 60 });
-    function cacheAndAssertTransformEvent() {
-      canvas._cacheTransformEventData(e);
-      assert.deepEqual(canvas._pointer, new fabric.Point(30, 30), 'pointer has been cached');
-      assert.deepEqual(canvas._absolutePointer, new fabric.Point(15, 15), 'absolute pointer has been cached');
-    }
-    function assertTransformEventCacheIsReset() {
-      assert.equal(canvas._pointer, null);
-      assert.equal(canvas._absolutePointer, null);
-      assert.equal(canvas._target, null);
-    }
-    canvas._currentTransform = null;
-    canvas.add(rect);
-    assertTransformEventCacheIsReset();
-    canvas.viewportTransform = [2, 0, 0, 2, 0, 0];
-
-    cacheAndAssertTransformEvent();
-    assert.ok(canvas._target === rect);
-    canvas._resetTransformEventData();
-    assertTransformEventCacheIsReset();
-
-    //  canvas resize
-    cacheAndAssertTransformEvent();
-    canvas.setDimensions({ width: 200, height: 200 });
-    assertTransformEventCacheIsReset();
-
-    //  window resize
-    cacheAndAssertTransformEvent();
-    canvas._onResize();
-    assertTransformEventCacheIsReset();
-  });
-
   QUnit.test('mouse:down with different buttons', function(assert) {
     var clickCount = 0;
     function mouseHandler() {
@@ -129,14 +95,15 @@
     assert.deepEqual(canvas._groupSelector, null, 'with object non selectable but already selected groupSelector is not started');
     canvas.__onMouseUp(e);
     canvas.discardActiveObject();
+    rect.selectable = true;
     rect.isEditing = true;
     canvas.__onMouseDown(e);
     assert.deepEqual(canvas._groupSelector, null, 'with object editing, groupSelector is not started');
     canvas.__onMouseUp(e);
     canvas.discardActiveObject();
-    rect.isEditing = false;
+    rect.selectable = false;
     canvas.__onMouseDown(e);
-    assert.deepEqual(canvas._groupSelector, expectedGroupSelector, 'a new groupSelector is created');
+    assert.deepEqual(canvas._groupSelector, expectedGroupSelector, 'a new groupSelector is created regardless of hitting rect because it is not selectable');
     canvas.__onMouseUp(e);
   });
 
@@ -854,6 +821,7 @@
     };
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: false, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expected[corner], `${expected[corner]} action is not disabled`);
     })
@@ -872,6 +840,7 @@
     target.lockScalingX = true;
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: false, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expectedLockScalinX[corner], `${corner} is ${expectedLockScalinX[corner]} for lockScalingX`);
     });
@@ -889,6 +858,7 @@
     };
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: false, [key2]: true, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expectedUniScale[corner], `${corner} is ${expectedUniScale[corner]} for uniScaleKey pressed`);
     });
@@ -908,6 +878,7 @@
     target.lockScalingY = true;
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: false, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expectedLockScalinY[corner], `${corner} is ${expectedLockScalinY[corner]} for lockScalingY`);
     });
@@ -924,6 +895,7 @@
     };
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: false, [key2]: true, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expectedLockScalinYUniscaleKey[corner], `${corner} is ${expectedLockScalinYUniscaleKey[corner]} for lockScalingY + uniscaleKey`);
     });
@@ -943,6 +915,7 @@
     target.lockScalingX = true;
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: false, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expectedAllLock[corner], `${corner} is ${expectedAllLock[corner]} for all locked`);
     });
@@ -960,6 +933,7 @@
     };
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: false, [key2]: true, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expectedAllLockUniscale[corner], `${corner} is ${expectedAllLockUniscale[corner]} for all locked + uniscale`);
     });
@@ -968,6 +942,7 @@
     target.lockScalingY = false;
     target.lockScalingX = false;
     const e = { clientX: target.oCoords.mtr.x, clientY: target.oCoords.mtr.y, [key]: false, target: canvas.upperCanvasEl };
+    target.findControl(target.oCoords.mtr);
     canvas._setCursorFromEvent(e, target);
     assert.equal(canvas.upperCanvasEl.style.cursor, 'not-allowed', `mtr is not allowed for locked rotation`);
 
@@ -977,6 +952,7 @@
     // with lock-skewing we are back at normal
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: false, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expected[corner], `${key} is ${expected[corner]} for both lockskewing`);
     });
@@ -997,6 +973,7 @@
     };
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: true, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expectedLockSkewingY[corner], `${corner} ${expectedLockSkewingY[corner]} for lockSkewingY`);
     });
@@ -1017,6 +994,7 @@
     };
     Object.entries(target.oCoords).forEach(([corner, coords]) => {
       const e = { clientX: coords.x, clientY: coords.y, [key]: true, target: canvas.upperCanvasEl };
+      target.findControl(coords);
       canvas._setCursorFromEvent(e, target);
       assert.equal(canvas.upperCanvasEl.style.cursor, expectedLockSkewingX[corner], `${corner} is ${expectedLockSkewingX[corner]} for lockSkewingX`);
     });

@@ -16,14 +16,22 @@ describe('polyControl', () => {
     const spy = jest.fn();
     poly.on('modifyPoly', spy);
     poly.on('modified', spy);
-    canvas
-      .getSelectionElement()
-      .dispatchEvent(new MouseEvent('mousedown', { clientX: 50, clientY: 50 }));
-    canvas._setupCurrentTransform(
-      new MouseEvent('mousedown', { clientX: 50, clientY: 50 }),
-      poly,
-      true
-    );
+    const e = new MouseEvent('mousedown', { clientX: 50, clientY: 50 });
+    canvas.getSelectionElement().dispatchEvent(e);
+    canvas.setupCurrentTransform({
+      e: Object.assign(
+        new MouseEvent('mousedown', { clientX: 50, clientY: 50 }),
+        {
+          viewportPoint: canvas.getViewportPoint(e),
+          scenePoint: canvas.getViewportPoint(e),
+        }
+      ),
+      viewportPoint: canvas.getViewportPoint(e),
+      scenePoint: canvas.getViewportPoint(e),
+      target: poly,
+      subTargets: [],
+      action: poly.findControl(new Point(50, 50)),
+    });
     document.dispatchEvent(
       new MouseEvent('mousemove', { clientX: 55, clientY: 55 })
     );

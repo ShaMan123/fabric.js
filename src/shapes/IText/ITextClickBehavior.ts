@@ -65,15 +65,15 @@ export abstract class ITextClickBehavior<
    * To prevent drag and drop between objects both shouldStartDragging and onDragStart should return false
    * @returns {boolean} should handle event
    */
-  onDragStart(e: DragEvent) {
-    return this.draggableTextDelegate.onDragStart(e);
+  onDragStart(ev: TPointerEventInfo<DragEvent>) {
+    return this.draggableTextDelegate.onDragStart(ev);
   }
 
   /**
    * @public override this method to control whether instance should/shouldn't become a drop target
    */
-  canDrop(e: DragEvent) {
-    return this.draggableTextDelegate.canDrop(e);
+  canDrop(ev: TPointerEventInfo<DragEvent>) {
+    return this.draggableTextDelegate.canDrop(ev);
   }
 
   /**
@@ -112,7 +112,7 @@ export abstract class ITextClickBehavior<
     if (!this.isEditing) {
       return;
     }
-    this.selectWord(this.getSelectionStartFromPointer(options.e));
+    this.selectWord(this.getSelectionStartFromPoint(options.scenePoint));
   }
 
   /**
@@ -122,7 +122,7 @@ export abstract class ITextClickBehavior<
     if (!this.isEditing) {
       return;
     }
-    this.selectLine(this.getSelectionStartFromPointer(options.e));
+    this.selectLine(this.getSelectionStartFromPoint(options.scenePoint));
   }
 
   /**
@@ -133,7 +133,8 @@ export abstract class ITextClickBehavior<
    * initializing a mousedDown on a text area will cancel fabricjs knowledge of
    * current compositionMode. It will be set to false.
    */
-  _mouseDownHandler({ e }: TPointerEventInfo) {
+  _mouseDownHandler(ev: TPointerEventInfo) {
+    const { e } = ev;
     if (
       !this.canvas ||
       !this.editable ||
@@ -143,7 +144,7 @@ export abstract class ITextClickBehavior<
       return;
     }
 
-    if (this.draggableTextDelegate.start(e)) {
+    if (this.draggableTextDelegate.start(ev)) {
       return;
     }
 
@@ -243,8 +244,8 @@ export abstract class ITextClickBehavior<
    * @param {TPointerEvent} e Event object
    * @return {Number} Index of a character
    */
-  getSelectionStartFromPointer(e: TPointerEvent): number {
-    const mouseOffset = this.canvas!.getScenePoint(e)
+  getSelectionStartFromPoint(scenePoint: Point): number {
+    const mouseOffset = scenePoint
       .transform(invertTransform(this.calcTransformMatrix()))
       .add(new Point(-this._getLeftOffset(), -this._getTopOffset()));
     let height = 0,
@@ -291,5 +292,12 @@ export abstract class ITextClickBehavior<
       this.flipX ? charLength - charIndex : charIndex,
       this._text.length
     );
+  }
+
+  /**
+   * @deprecated use {@link getSelectionStartFromPoint}
+   */
+  getSelectionStartFromPointer(e: Event): number {
+    return this.getSelectionStartFromPoint(this.canvas!.getScenePoint(e));
   }
 }

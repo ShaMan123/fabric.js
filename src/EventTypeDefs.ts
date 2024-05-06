@@ -130,11 +130,7 @@ type CanvasModificationEvents = ModificationEventsSpec<
   'before:transform': TEvent & { transform: Transform };
 };
 
-export interface TPointerEventInfo<E extends TPointerEvent = TPointerEvent>
-  extends TEvent<E> {
-  target?: FabricObject;
-  subTargets?: FabricObject[];
-  transform?: Transform | null;
+export interface EventPoints {
   /**
    * @deprecated
    * use viewportPoint instead.
@@ -149,6 +145,14 @@ export interface TPointerEventInfo<E extends TPointerEvent = TPointerEvent>
   absolutePointer: Point;
   scenePoint: Point;
   viewportPoint: Point;
+}
+
+export interface TPointerEventInfo<E extends Event = TPointerEvent>
+  extends TEvent<E>,
+    EventPoints {
+  target?: FabricObject;
+  subTargets: FabricObject[];
+  transform?: Transform | null;
 }
 
 interface SimpleEventHandler<T extends Event = TPointerEvent>
@@ -165,42 +169,33 @@ interface OutEvent {
   nextTarget?: FabricObject;
 }
 
-export interface DragEventData extends TEvent<DragEvent> {
+export type DragEventRenderingEffectData = TEvent<DragEvent> & {
+  dragSource: FabricObject | undefined;
+  dropTarget: FabricObject | undefined;
+  prevDropTarget: FabricObject | undefined;
+  viewportPoint: Point;
+  scenePoint: Point;
+};
+
+export interface DragEventData extends TEvent<DragEvent>, EventPoints {
   target?: FabricObject;
-  subTargets?: FabricObject[];
+  subTargets: FabricObject[];
   dragSource?: FabricObject;
   canDrop?: boolean;
   didDrop?: boolean;
   dropTarget?: FabricObject;
 }
 
-export interface DropEventData extends DragEventData {
-  /**
-   * @deprecated
-   * use viewportPoint instead.
-   * Kept for compatibility
-   */
-  pointer: Point;
-  /**
-   * @deprecated
-   * use scenePoint instead.
-   * Kept for compatibility
-   */
-  absolutePointer: Point;
-  scenePoint: Point;
-  viewportPoint: Point;
-}
-
 interface DnDEvents {
-  dragstart: TEventWithTarget<DragEvent>;
+  dragstart: DragEventData;
   drag: DragEventData;
   dragover: DragEventData;
   dragenter: DragEventData & InEvent;
   dragleave: DragEventData & OutEvent;
   dragend: DragEventData;
-  'drop:before': DropEventData;
-  drop: DropEventData;
-  'drop:after': DropEventData;
+  'drop:before': DragEventData;
+  drop: DragEventData;
+  'drop:after': DragEventData;
 }
 
 interface CanvasDnDEvents extends DnDEvents {
