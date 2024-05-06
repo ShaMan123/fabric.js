@@ -37,7 +37,7 @@ jobs:
     env:
       file: CHANGELOG.md
       next_version: next
-      link: '[#${{ github.event.number }}](https://github.com/fabricjs/fabric.js/pull/${{ github.event.number }})'
+      link: '[#${{ github.event.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.number }})'
     steps:
       - uses: actions/checkout@v3
         with:
