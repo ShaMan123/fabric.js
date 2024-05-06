@@ -26,35 +26,6 @@ import { TextEditingManager } from './TextEditingManager';
 
 const addEventOptions = { passive: false } as EventListenerOptions;
 
-const prepareEvent = <T extends Event>(canvas: Canvas, e: T) => {
-  const viewportPoint = Object.freeze(canvas.getViewportPoint(e));
-  const scenePoint = Object.freeze(
-    sendPointToPlane(viewportPoint, undefined, canvas.viewportTransform)
-  );
-  // should be non writable but too many tests are failing
-  Object.defineProperties(e, {
-    viewportPoint: {
-      value: viewportPoint,
-      configurable: true,
-      enumerable: false,
-      writable: true,
-    },
-    scenePoint: {
-      value: scenePoint,
-      configurable: true,
-      enumerable: false,
-      writable: true,
-    },
-  });
-  return {
-    e: e as StatefulEvent<T>,
-    viewportPoint,
-    scenePoint,
-    pointer: viewportPoint,
-    absolutePointer: scenePoint,
-  };
-};
-
 // just to be clear, the utils are now deprecated and those are here exactly as minifier helpers
 // because el.addEventListener can't me be minified while a const yes and we use it 47 times in this file.
 // few bytes but why give it away.
@@ -251,6 +222,38 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
   }
 
   /**
+   * Override at will
+   */
+  protected prepareEvent<T extends Event>(e: T) {
+    const viewportPoint = Object.freeze(this.getViewportPoint(e));
+    const scenePoint = Object.freeze(
+      sendPointToPlane(viewportPoint, undefined, this.viewportTransform)
+    );
+    // should be non writable but too many tests are failing
+    Object.defineProperties(e, {
+      viewportPoint: {
+        value: viewportPoint,
+        configurable: true,
+        enumerable: false,
+        writable: true,
+      },
+      scenePoint: {
+        value: scenePoint,
+        configurable: true,
+        enumerable: false,
+        writable: true,
+      },
+    });
+    return {
+      e: e as StatefulEvent<T>,
+      viewportPoint,
+      scenePoint,
+      pointer: viewportPoint,
+      absolutePointer: scenePoint,
+    };
+  }
+
+  /**
    * @private
    * @param {Event} [e] Event object fired on wheel event
    */
@@ -265,7 +268,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
   private _onMouseOut(e: TPointerEvent) {
     const target = this._hoveredTarget;
     const data: CanvasEvents['mouse:out'] = {
-      ...prepareEvent(this, e),
+      ...this.prepareEvent(e),
       target,
       subTargets: [],
     };
@@ -290,7 +293,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
     // as a short term fix we are not firing this if we are currently transforming.
     // as a long term fix we need to separate the action of finding a target with the
     // side effects we added to it.
-    const event = prepareEvent(this, e);
+    const event = this.prepareEvent(e);
     if (!this._currentTransform && !this.findEventTargets(event).target) {
       this.fire('mouse:over', {
         ...event,
@@ -310,7 +313,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
   private _onDragStart(e: DragEvent) {
     this._isClick = false;
     const activeObject = this.getActiveObject();
-    const event = prepareEvent(this, e);
+    const event = this.prepareEvent(e);
     if (activeObject && activeObject.onDragStart(event.e)) {
       this._dragSource = activeObject;
       const data: DragEventData = {
@@ -382,7 +385,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
     const didDrop = !!e.dataTransfer && e.dataTransfer.dropEffect !== NONE,
       dropTarget = didDrop ? this._activeObject : undefined,
       options: DragEventData = {
-        ...prepareEvent(this, e),
+        ...this.prepareEvent(e),
         target: this._dragSource as FabricObject,
         subTargets: this.targets,
         dragSource: this._dragSource as FabricObject,
@@ -408,7 +411,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    */
   private _onDragProgress(e: DragEvent) {
     const options: DragEventData = {
-      ...prepareEvent(this, e),
+      ...this.prepareEvent(e),
       target: this._dragSource,
       dragSource: this._dragSource,
       dropTarget: this._draggedoverTarget,
@@ -447,7 +450,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
   private _onDragOver(ev: DragEvent) {
     const eventType = 'dragover';
     const dragSource = this._dragSource as FabricObject;
-    const event = prepareEvent(this, ev);
+    const event = this.prepareEvent(ev);
     const data = {
       ...event,
       ...this.findDragTargets(event),
@@ -496,7 +499,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {Event} [e] Event object fired on Event.js shake
    */
   private _onDragEnter(e: DragEvent) {
-    const event = prepareEvent(this, e);
+    const event = this.prepareEvent(e);
     const data = {
       ...event,
       ...this.findDragTargets(event),
@@ -513,7 +516,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {Event} [e] Event object fired on Event.js shake
    */
   private _onDragLeave(e: DragEvent) {
-    const event = prepareEvent(this, e);
+    const event = this.prepareEvent(e);
     const options: DragEventData = {
       ...event,
       target: this._draggedoverTarget,
@@ -545,7 +548,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {Event} e
    */
   private _onDrop(e: DragEvent) {
-    const event = prepareEvent(this, e);
+    const event = this.prepareEvent(e);
     const data: DragEventData = {
       ...event,
       ...this.findDragTargets(event),
@@ -569,7 +572,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {Event} e Event object fired on mousedown
    */
   private _onContextMenu(e: Event): false {
-    const event = prepareEvent(this, e);
+    const event = this.prepareEvent(e);
     const data: CanvasEvents['contextmenu'] = {
       ...event,
       ...this.findEventTargets(event),
@@ -586,7 +589,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {Event} e Event object fired on mousedown
    */
   private _onDoubleClick(e: TPointerEvent) {
-    const event = prepareEvent(this, e);
+    const event = this.prepareEvent(e);
     this._handleEvent('dblclick', {
       ...event,
       ...this.findEventTargets(event),
@@ -795,7 +798,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {Event} ev Event object fired on mouseup
    */
   __onMouseUp(ev: Event) {
-    const event = prepareEvent(this, ev);
+    const event = this.prepareEvent(ev);
     const transformTarget = this._currentTransform?.target;
     const eventTargets = transformTarget
       ? { target: transformTarget, subTargets: this.targets }
@@ -955,7 +958,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    */
   __onMouseDown(ev: Event) {
     this._isClick = true;
-    const event = prepareEvent(this, ev);
+    const event = this.prepareEvent(ev);
     const eventTargets = this._currentTransform
       ? { target: this._currentTransform.target, subTargets: this.targets }
       : this.findEventTargets(event);
@@ -1105,7 +1108,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    */
   __onMouseMove(ev: Event) {
     this._isClick = false;
-    const event = prepareEvent(this, ev);
+    const event = this.prepareEvent(ev);
     const eventTargets = this._currentTransform
       ? { target: this._currentTransform.target, subTargets: this.targets }
       : this.findEventTargets(event);
@@ -1266,7 +1269,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {Event} e Event object fired on mouseup
    */
   __onMouseWheel(e: WheelEvent) {
-    const event = prepareEvent(this, e);
+    const event = this.prepareEvent(e);
     this._handleEvent('wheel', {
       ...event,
       ...this.findEventTargets(event),
