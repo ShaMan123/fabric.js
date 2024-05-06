@@ -108,8 +108,6 @@ export abstract class ITextBehavior<
   initBehavior() {
     this._tick = this._tick.bind(this);
     this._onTickComplete = this._onTickComplete.bind(this);
-    this.updateSelectionOnMouseMove =
-      this.updateSelectionOnMouseMove.bind(this);
   }
 
   onDeselect(options?: { e?: TPointerEvent; object?: FabricObject }) {
@@ -419,7 +417,7 @@ export abstract class ITextBehavior<
   /**
    * called by {@link Canvas#textEditingManager}
    */
-  updateSelectionOnMouseMove(e: TPointerEvent) {
+  updateSelectionOnMouseMove({ scenePoint }: TPointerEventInfo) {
     if (this.getActiveControl()) {
       return;
     }
@@ -428,7 +426,7 @@ export abstract class ITextBehavior<
     // regain focus
     getDocumentFromElement(el).activeElement !== el && el.focus();
 
-    const newSelectionStart = this.getSelectionStartFromPointer(e),
+    const newSelectionStart = this.getSelectionStartFromPoint(scenePoint),
       currentStart = this.selectionStart,
       currentEnd = this.selectionEnd;
     if (

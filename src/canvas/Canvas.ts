@@ -1154,7 +1154,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
       this.transformObject(data, this._currentTransform);
     }
 
-    this.textEditingManager.onMouseMove(e);
+    this.textEditingManager.onMouseMove(data);
     this._handleEvent('move', data);
   }
 

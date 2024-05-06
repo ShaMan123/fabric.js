@@ -1,4 +1,4 @@
-import type { TPointerEvent } from '../EventTypeDefs';
+import type { TPointerEventInfo } from '../EventTypeDefs';
 import type { ITextBehavior } from '../shapes/IText/ITextBehavior';
 import { removeFromArray } from '../util/internals';
 import type { Canvas } from './Canvas';
@@ -50,8 +50,8 @@ export class TextEditingManager {
     }
   }
 
-  onMouseMove(e: TPointerEvent) {
-    this.target?.isEditing && this.target.updateSelectionOnMouseMove(e);
+  onMouseMove(data: TPointerEventInfo) {
+    this.target?.isEditing && this.target.updateSelectionOnMouseMove(data);
   }
 
   clear() {
