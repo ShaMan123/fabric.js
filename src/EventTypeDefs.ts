@@ -19,11 +19,6 @@ export type ModifierKey = keyof Pick<
 
 export type TOptionalModifierKey = ModifierKey | null | undefined;
 
-export type StatefulEvent<E extends Event> = E & {
-  viewportPoint: Point;
-  scenePoint: Point;
-};
-
 export type TPointerEvent = MouseEvent | TouchEvent | PointerEvent;
 
 export type TransformAction<T extends Transform = Transform, R = void> = (
@@ -88,7 +83,7 @@ export type Transform = {
 };
 
 export interface TEvent<E extends Event = TPointerEvent> {
-  e: StatefulEvent<E>;
+  e: E;
 }
 
 interface TEventWithTarget<E extends Event = TPointerEvent> extends TEvent<E> {

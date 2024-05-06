@@ -5,7 +5,6 @@ import type {
   DragEventData,
   DragEventRenderingEffectData,
   ObjectEvents,
-  StatefulEvent,
   TPointerEvent,
   TPointerEventInfo,
   TPointerEventNames,
@@ -229,23 +228,8 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
     const scenePoint = Object.freeze(
       sendPointToPlane(viewportPoint, undefined, this.viewportTransform)
     );
-    // should be non writable but too many tests are failing
-    Object.defineProperties(e, {
-      viewportPoint: {
-        value: viewportPoint,
-        configurable: true,
-        enumerable: false,
-        writable: true,
-      },
-      scenePoint: {
-        value: scenePoint,
-        configurable: true,
-        enumerable: false,
-        writable: true,
-      },
-    });
     return {
-      e: e as StatefulEvent<T>,
+      e,
       viewportPoint,
       scenePoint,
       pointer: viewportPoint,
@@ -313,13 +297,12 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
   private _onDragStart(e: DragEvent) {
     this._isClick = false;
     const activeObject = this.getActiveObject();
-    const event = this.prepareEvent(e);
-    if (activeObject && activeObject.onDragStart(event.e)) {
+    const event: DragEventData = { ...this.prepareEvent(e), subTargets: [] };
+    if (activeObject && activeObject.onDragStart(event)) {
       this._dragSource = activeObject;
       const data: DragEventData = {
         ...event,
         target: activeObject,
-        subTargets: [],
       };
       this.fire('dragstart', data);
       activeObject.fire('dragstart', data);
@@ -466,7 +449,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
     //  if dragleave is needed, object will not fire dragover so we don't need to trouble ourselves with it
     this._fireEnterLeaveEvents(target, data);
     if (target) {
-      if (target.canDrop(e)) {
+      if (target.canDrop(data)) {
         dropTarget = target;
       }
       target.fire(eventType, data);
@@ -476,7 +459,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
       // accept event only if previous targets didn't (the accepting target calls `preventDefault` to inform that the event is taken)
       // TODO: verify if those should loop in inverse order then?
       // what is the order of subtargets?
-      if (subTarget.canDrop(e)) {
+      if (subTarget.canDrop(data)) {
         dropTarget = subTarget;
       }
       subTarget.fire(eventType, data);
@@ -1008,7 +991,11 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
 
     const prevActiveObject = this._activeObject;
 
-    const executedMultiSelection = this.handleMultiSelection(e, target);
+    const executedMultiSelection = this.handleMultiSelection(
+      e,
+      target,
+      viewportPoint
+    );
     const discardedActiveObject =
       !executedMultiSelection &&
       this._shouldClearSelection(e, target) &&
@@ -1365,10 +1352,13 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {TPointerEvent} e Event object
    * @param {FabricObject} target target of event to select/deselect
    * @returns true if grouping occurred
+   *
+   * @todo refactor this method to accept an event context instead of passing {@link viewportPoint} as an optional param
    */
   protected handleMultiSelection(
-    e: StatefulEvent<TPointerEvent>,
-    target?: FabricObject
+    e: TPointerEvent,
+    target?: FabricObject,
+    viewportPoint = this.getViewportPoint(e)
   ) {
     const activeObject = this._activeObject;
     const isAS = isActiveSelection(activeObject);
@@ -1396,8 +1386,6 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
       if (isAS) {
         const prevActiveObjects = activeObject.getObjects();
         if (target === activeObject) {
-          const viewportPoint =
-            'viewportPoint' in e ? e.viewportPoint : this.getViewportPoint(e);
           target =
             // first search active objects for a target to remove
             this.searchPossibleTargets(prevActiveObjects, viewportPoint) ||

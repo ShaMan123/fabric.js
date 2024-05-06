@@ -15,8 +15,8 @@ import { sizeAfterTransform } from '../../util/misc/objectTransforms';
 import type {
   DragEventRenderingEffectData,
   ObjectEvents,
-  StatefulEvent,
   TPointerEvent,
+  TPointerEventInfo,
 } from '../../EventTypeDefs';
 import type { Canvas } from '../../canvas/Canvas';
 import type { ControlRenderingStyleOverride } from '../../controls/controlRendering';
@@ -667,17 +667,17 @@ export class InteractiveFabricObject<
    * Fired once a drag session has started
    * @returns true to handle the drag event
    */
-  onDragStart(e: StatefulEvent<DragEvent>) {
+  onDragStart(ev: TPointerEventInfo<DragEvent>) {
     return false;
   }
 
   /**
    * Override to customize drag and drop behavior
    * @public
-   * @param {StatefulEvent<DragEvent>} e
+   * @param {TPointerEventInfo<DragEvent>} e
    * @returns {boolean} true if the object currently dragged can be dropped on the target
    */
-  canDrop(e: StatefulEvent<DragEvent>): boolean {
+  canDrop(ev: TPointerEventInfo<DragEvent>): boolean {
     return false;
   }
 

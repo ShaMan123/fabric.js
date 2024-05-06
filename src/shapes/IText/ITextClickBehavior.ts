@@ -1,8 +1,4 @@
-import type {
-  StatefulEvent,
-  TPointerEvent,
-  TPointerEventInfo,
-} from '../../EventTypeDefs';
+import type { TPointerEvent, TPointerEventInfo } from '../../EventTypeDefs';
 import type { XY } from '../../Point';
 import { Point } from '../../Point';
 import { stopEvent } from '../../util/dom_event';
@@ -69,15 +65,15 @@ export abstract class ITextClickBehavior<
    * To prevent drag and drop between objects both shouldStartDragging and onDragStart should return false
    * @returns {boolean} should handle event
    */
-  onDragStart(e: StatefulEvent<DragEvent>) {
-    return this.draggableTextDelegate.onDragStart(e);
+  onDragStart(ev: TPointerEventInfo<DragEvent>) {
+    return this.draggableTextDelegate.onDragStart(ev);
   }
 
   /**
    * @public override this method to control whether instance should/shouldn't become a drop target
    */
-  canDrop(e: StatefulEvent<DragEvent>) {
-    return this.draggableTextDelegate.canDrop(e);
+  canDrop(ev: TPointerEventInfo<DragEvent>) {
+    return this.draggableTextDelegate.canDrop(ev);
   }
 
   /**
@@ -137,7 +133,8 @@ export abstract class ITextClickBehavior<
    * initializing a mousedDown on a text area will cancel fabricjs knowledge of
    * current compositionMode. It will be set to false.
    */
-  _mouseDownHandler({ e }: TPointerEventInfo) {
+  _mouseDownHandler(ev: TPointerEventInfo) {
+    const { e } = ev;
     if (
       !this.canvas ||
       !this.editable ||
@@ -147,7 +144,7 @@ export abstract class ITextClickBehavior<
       return;
     }
 
-    if (this.draggableTextDelegate.start(e)) {
+    if (this.draggableTextDelegate.start(ev)) {
       return;
     }
 
@@ -300,9 +297,7 @@ export abstract class ITextClickBehavior<
   /**
    * @deprecated use {@link getSelectionStartFromPoint}
    */
-  getSelectionStartFromPointer(e: StatefulEvent<Event> | Event): number {
-    return this.getSelectionStartFromPoint(
-      'scenePoint' in e ? e.scenePoint : this.canvas!.getScenePoint(e)
-    );
+  getSelectionStartFromPointer(e: Event): number {
+    return this.getSelectionStartFromPoint(this.canvas!.getScenePoint(e));
   }
 }
