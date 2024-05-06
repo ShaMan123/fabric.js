@@ -536,7 +536,6 @@ export abstract class ITextBehavior<
     this.text = textarea.value;
     this.set('dirty', true);
     this.initDimensions();
-    this.setCoords();
     const newSelection = this.fromStringToGraphemeSelection(
       textarea.selectionStart,
       textarea.selectionEnd,
@@ -693,7 +692,6 @@ export abstract class ITextBehavior<
     this._restoreEditingProps();
     if (this._forceClearCache) {
       this.initDimensions();
-      this.setCoords();
     }
     this.fire('editing:exited');
     isTextChanged && this.fire('modified');
@@ -1010,7 +1008,6 @@ export abstract class ITextBehavior<
     this.text = this._text.join('');
     this.set('dirty', true);
     this.initDimensions();
-    this.setCoords();
     this._removeExtraneousStyles();
   }
 
@@ -1045,7 +1042,6 @@ export abstract class ITextBehavior<
     this.text = this._text.join('');
     this.set('dirty', true);
     this.initDimensions();
-    this.setCoords();
     this._removeExtraneousStyles();
   }
 

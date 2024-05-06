@@ -1425,7 +1425,6 @@
     assert.equal(canvas.item(2), rect3);
 
     rect1.set({ top: 100 });
-    rect1.setCoords();
     canvas.sendObjectBackwards(rect1, true);
 
     assert.equal(canvas.item(1), rect1);
@@ -1482,7 +1481,6 @@
     assert.equal(canvas.item(2), rect3);
 
     rect2.set({ left: 200 });
-    rect2.setCoords();
     canvas.bringObjectForward(rect2, true);
 
     // rect2, rect3 do not overlap
@@ -1712,27 +1710,6 @@
     canvas.setViewportTransform(vpt);
     assert.deepEqual(canvas.viewportTransform, vpt, 'viewport now is the set one');
     canvas.viewportTransform = fabric.StaticCanvas.getDefaults().viewportTransform;
-  });
-
-  QUnit.test('setViewportTransform calls objects setCoords', function(assert) {
-    var vpt = [2, 0, 0, 2, 50, 50];
-    assert.deepEqual(canvas.viewportTransform, [1, 0, 0, 1, 0, 0], 'initial viewport is identity matrix');
-    var rect = new fabric.Rect({ width: 10, heigth: 10 });
-    var rectBg = new fabric.Rect({ width: 10, heigth: 10 });
-    var rectOverlay = new fabric.Rect({ width: 10, heigth: 10 });
-    canvas.add(rect);
-    canvas.cancelRequestedRender();
-    rectBg.canvas = canvas;
-    canvas.backgroundImage = rectBg;
-    rectOverlay.canvas = canvas;
-    canvas.overlayImage = rectOverlay;
-    assert.deepEqual(new fabric.Point(rect.oCoords.tl), new fabric.Point(0,0), 'rect oCoords are set for normal viewport');
-    assert.equal(rectBg.oCoords, undefined, 'rectBg oCoords are not set');
-    assert.equal(rectOverlay.oCoords, undefined, 'rectOverlay oCoords are not set');
-    canvas.setViewportTransform(vpt);
-    assert.deepEqual(new fabric.Point(rect.oCoords.tl), new fabric.Point(50,50), 'rect oCoords are set');
-    assert.deepEqual(new fabric.Point(rectBg.oCoords.tl),  new fabric.Point(50,50), 'rectBg oCoords are set');
-    assert.deepEqual(new fabric.Point(rectOverlay.oCoords.tl),  new fabric.Point(50,50), 'rectOverlay oCoords are set');
   });
 
   QUnit.test('getZoom', function(assert) {

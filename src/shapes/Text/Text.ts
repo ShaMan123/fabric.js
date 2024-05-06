@@ -427,7 +427,6 @@ export class FabricText<
       this.setPathInfo();
     }
     this.initDimensions();
-    this.setCoords();
   }
 
   /**
@@ -475,6 +474,8 @@ export class FabricText<
       // once text is measured we need to make space fatter to make justified text.
       this.enlargeSpaces();
     }
+
+    this.invalidateCoords();
   }
 
   /**
@@ -1771,7 +1772,6 @@ export class FabricText<
     }
     if (needsDims && this.initialized) {
       this.initDimensions();
-      this.setCoords();
     }
     return this;
   }

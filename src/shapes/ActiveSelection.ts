@@ -70,13 +70,6 @@ export class ActiveSelection extends Group {
 
   /**
    * @private
-   */
-  _shouldSetNestedCoords() {
-    return true;
-  }
-
-  /**
-   * @private
    * @override we don't want the selection monitor to be active
    */
   __objectSelectionMonitor() {

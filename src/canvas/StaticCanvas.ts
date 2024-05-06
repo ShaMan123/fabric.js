@@ -224,7 +224,7 @@ export class StaticCanvas<
       obj.canvas.remove(obj);
     }
     obj._set('canvas', this);
-    obj.setCoords();
+    obj.invalidateCoords();
     this.fire('object:added', { target: obj });
     obj.fire('added', { target: this });
   }
@@ -379,21 +379,7 @@ export class StaticCanvas<
    * @param {Array} vpt a Canvas 2D API transform matrix
    */
   setViewportTransform(vpt: TMat2D) {
-    const backgroundObject = this.backgroundImage,
-      overlayObject = this.overlayImage,
-      len = this._objects.length;
-
-    this.viewportTransform = vpt;
-    for (let i = 0; i < len; i++) {
-      const object = this._objects[i];
-      object.group || object.setCoords();
-    }
-    if (backgroundObject) {
-      backgroundObject.setCoords();
-    }
-    if (overlayObject) {
-      overlayObject.setCoords();
-    }
+    this.viewportTransform = [...vpt];
     this.calcViewportBoundaries();
     this.renderOnAddRemove && this.requestRenderAll();
   }
@@ -807,7 +793,7 @@ export class StaticCanvas<
    */
   _centerObject(object: FabricObject, center: Point) {
     object.setXY(center, CENTER, CENTER);
-    object.setCoords();
+    object.invalidateCoords();
     this.renderOnAddRemove && this.requestRenderAll();
   }
 

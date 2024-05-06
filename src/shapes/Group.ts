@@ -133,7 +133,7 @@ export class Group
    */
   constructor(objects: FabricObject[] = [], options: Partial<GroupProps> = {}) {
     // @ts-expect-error options error
-    super(options);
+    super({ _objects: [], ...options });
     this._objects = [...objects]; // Avoid unwanted mutations of Collection to affect the caller
 
     this.__objectSelectionTracker = this.__objectSelectionMonitor.bind(
@@ -285,19 +285,20 @@ export class Group
   }
 
   /**
-   * @private
-   */
-  _shouldSetNestedCoords() {
-    return this.subTargetCheck;
-  }
-
-  /**
    * Remove all objects
    * @returns {FabricObject[]} removed objects
    */
   removeAll() {
     this._activeObjects = [];
     return this.remove(...this._objects);
+  }
+
+  /**
+   * @override recursively invalidate descendant coords as well
+   */
+  invalidateCoords() {
+    super.invalidateCoords();
+    this.forEachObject((object) => object.invalidateCoords());
   }
 
   /**
@@ -365,7 +366,7 @@ export class Group
         )
       );
     }
-    this._shouldSetNestedCoords() && object.setCoords();
+
     object._set('group', this);
     object._set('canvas', this.canvas);
     this._watchObject(true, object);
@@ -412,8 +413,9 @@ export class Group
           object.calcTransformMatrix()
         )
       );
-      object.setCoords();
     }
+    // invalidate coords in case group was transformed
+    object.invalidateCoords();
     this._watchObject(false, object);
     const index =
       this._activeObjects.length > 0 ? this._activeObjects.indexOf(object) : -1;
@@ -487,16 +489,6 @@ export class Group
       }
     }
     this._drawClipPath(ctx, this.clipPath);
-  }
-
-  /**
-   * @override
-   * @return {Boolean}
-   */
-  setCoords() {
-    super.setCoords();
-    this._shouldSetNestedCoords() &&
-      this.forEachObject((object) => object.setCoords());
   }
 
   triggerLayout(options: ImperativeLayoutOptions = {}) {
@@ -689,7 +681,6 @@ export class Group
         target: group,
         targets: group.getObjects(),
       });
-      group.setCoords();
       return group;
     });
   }

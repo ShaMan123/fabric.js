@@ -35,20 +35,21 @@ describe('InteractiveObject', () => {
         subTargetCheck: true,
       });
       canvas.add(group);
-      group.setCoords();
       const objectAngle = Math.round(object.getTotalAngle());
       expect(objectAngle).toEqual(35);
-      Object.values(object.oCoords).forEach((cornerPoint: TOCoord) => {
-        const controlAngle = Math.round(
-          radiansToDegrees(
-            Math.atan2(
-              cornerPoint.corner.tr.y - cornerPoint.corner.tl.y,
-              cornerPoint.corner.tr.x - cornerPoint.corner.tl.x
+      Object.values(object.getControlCoords()).forEach(
+        (cornerPoint: TOCoord) => {
+          const controlAngle = Math.round(
+            radiansToDegrees(
+              Math.atan2(
+                cornerPoint.corner.tr.y - cornerPoint.corner.tl.y,
+                cornerPoint.corner.tr.x - cornerPoint.corner.tl.x
+              )
             )
-          )
-        );
-        expect(controlAngle).toEqual(objectAngle);
-      });
+          );
+          expect(controlAngle).toEqual(objectAngle);
+        }
+      );
     });
   });
 
@@ -62,7 +63,7 @@ describe('InteractiveObject', () => {
     expect(object.getActiveControl()).toEqual({
       key: 'control',
       control,
-      coord: object.oCoords.control,
+      coord: object['oCoords']!.control,
     });
   });
 });

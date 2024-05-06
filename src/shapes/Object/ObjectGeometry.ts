@@ -47,7 +47,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * The coordinates get updated with {@link setCoords}.
    * You can calculate them without updating with {@link calcACoords()}
    */
-  declare aCoords: TACoords;
+  protected declare aCoords?: TACoords;
 
   /**
    * storage cache for object transform matrix
@@ -357,7 +357,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   scale(value: number): void {
     this._set('scaleX', value);
     this._set('scaleY', value);
-    this.setCoords();
+    this.invalidateCoords();
   }
 
   /**
@@ -430,11 +430,16 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
 
   /**
    * Sets corner and controls position coordinates based on current angle, width and height, left and top.
-   * aCoords are used to quickly find an object on the canvas.
-   * See {@link https://github.com/fabricjs/fabric.js/wiki/When-to-call-setCoords} and {@link http://fabricjs.com/fabric-gotchas}
+   * {@link aCoords} are used to quickly find an object on the canvas.
+   *
+   * Calling this method is probably redundant, consider calling {@link invalidateCoords} instead.
    */
   setCoords(): void {
     this.aCoords = this.calcACoords();
+  }
+
+  invalidateCoords() {
+    delete this.aCoords;
   }
 
   transformMatrixKey(skipGroup = false): string {
