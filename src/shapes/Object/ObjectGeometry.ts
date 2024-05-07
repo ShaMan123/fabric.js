@@ -5,10 +5,38 @@ import { makeBoundingBoxFromPoints } from '../../util/misc/boundingBoxFromPoints
 import { ObjectTransformations } from './ObjectTransformations';
 import { ViewportBBox } from '../../BBox/ViewportBBox';
 import { Intersection } from '../../Intersection';
+import type { Shadow } from '../../Shadow';
 
 export class ObjectGeometry<
   EventSpec extends ObjectEvents = ObjectEvents
 > extends ObjectTransformations<EventSpec> {
+  declare shadow?: Shadow;
+
+  // @TODO: shadow geometry
+  // getShadowData() {
+  //   if (!this.shadow) {
+  //     return;
+  //   }
+
+  //   const {offsetX,offsetY,blur,nonScaling} = this.shadow;
+  //   var  sx = 1,
+  //     sy = 1;
+  //   if (!nonScaling) {
+  //     var scaling = this.getTotalObjectScaling();
+  //     sx = scaling.x;
+  //     sy = scaling.y;
+  //   }
+  //   const shadowOffset = new Point(
+  //       this.shadow.offsetX * sx,
+  //       this.shadow.offsetY * sy
+  //     ),
+  //     blurOffset = new Point(blur * sx, blur * sy);
+  //   return {
+  //     offset: shadowOffset,
+  //     blur: blurOffset,
+  //   };
+  // }
+
   /**
    * Checks if object intersects with the scene rect formed by {@link tl} and {@link br}
    */
