@@ -75,6 +75,7 @@ export const fabricObjectDefaultValues: Partial<
   visible: true,
   includeDefaultValues: true,
   excludeFromExport: false,
+  // TODO: removed as unused or set to false
   objectCaching: true,
   clipPath: undefined,
   inverted: false,
