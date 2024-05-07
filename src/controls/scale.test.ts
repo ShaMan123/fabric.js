@@ -9,7 +9,7 @@ import { scalingX, scalingY } from './scale';
 //
 const createZeroThickRectangleScalingItems = (
   rectOptions: { width: number; height: number } & Partial<RectProps>,
-  usedCorner: keyof Rect['oCoords'],
+  usedCorner: string,
   pointDiff: Point
 ) => {
   const extraMargin = 100;
@@ -38,14 +38,16 @@ const createZeroThickRectangleScalingItems = (
   // create mouse event near center of rect, as the 0 size will put it on the middle scaler
   const canvasOffset = canvas.calcOffset();
 
+  const coord = target.getControlCoords()[usedCorner];
+
   const mouseDown = new MouseEvent('mousedown', {
-    clientX: canvasOffset.left + target.oCoords[usedCorner].x,
-    clientY: canvasOffset.top + target.oCoords[usedCorner].y,
+    clientX: canvasOffset.left + coord.x,
+    clientY: canvasOffset.top + coord.y,
   });
 
   const moveEvent = new MouseEvent('mousemove', {
-    clientX: canvasOffset.left + target.oCoords[usedCorner].x + pointDiff.x,
-    clientY: canvasOffset.top + target.oCoords[usedCorner].y + pointDiff.y,
+    clientX: canvasOffset.left + coord.x + pointDiff.x,
+    clientY: canvasOffset.top + coord.y + pointDiff.y,
   });
 
   canvas.setActiveObject(target);

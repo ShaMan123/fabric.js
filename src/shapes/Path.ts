@@ -1,4 +1,5 @@
 import { config } from '../config';
+import { LEFT, TOP } from '../constants';
 import { SHARED_ATTRIBUTES } from '../parser/attributes';
 import { parseAttributes } from '../parser/parseAttributes';
 import type { XY } from '../Point';
@@ -26,7 +27,6 @@ import type {
   TSVGReviver,
   TOptions,
 } from '../typedefs';
-import { CENTER, LEFT, TOP } from '../constants';
 import type { CSSRules } from '../parser/typedefs';
 
 interface UniquePathProps {
@@ -80,8 +80,14 @@ export class Path<
   ) {
     super(options as Props);
     this._setPath(path || [], true);
+    // @TODO fix this bug not respecting origin
     typeof left === 'number' && this.set(LEFT, left);
     typeof top === 'number' && this.set(TOP, top);
+    // this.setRelativeXY(
+    //   new Point(left ?? pathTL.x, top ?? pathTL.y),
+    //   typeof left === 'number' ? this.originX : 'left',
+    //   typeof top === 'number' ? this.originY : 'top'
+    // );
   }
 
   /**
@@ -278,7 +284,7 @@ export class Path<
     this.set({ width, height, pathOffset });
     // using pathOffset because it match the use case.
     // if pathOffset change here we need to use left + width/2 , top + height/2
-    adjustPosition && this.setPositionByOrigin(pathOffset, CENTER, CENTER);
+    adjustPosition && this.setRelativeCenterPoint(pathOffset);
   }
 
   _calcBoundsFromPath(): TBBox {

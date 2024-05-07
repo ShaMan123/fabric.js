@@ -101,46 +101,46 @@
     var cObj = new fabric.Object({ top: 10, left: 10, width: 10, height: 10, strokeWidth: 0, canvas: {} });
     cObj.setCoords();
 
-    assert.equal(cObj.oCoords.tl.corner.tl.x.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tl.corner.tl.y.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tl.corner.tr.x.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.tl.corner.tr.y.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tl.corner.bl.x.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tl.corner.bl.y.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.tl.corner.br.x.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.tl.corner.br.y.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.bl.corner.tl.x.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.bl.corner.tl.y.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.bl.corner.tr.x.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.bl.corner.tr.y.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.bl.corner.bl.x.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.bl.corner.bl.y.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.bl.corner.br.x.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.bl.corner.br.y.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.tr.corner.tl.x.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.tr.corner.tl.y.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tr.corner.tr.x.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.tr.corner.tr.y.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tr.corner.bl.x.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.tr.corner.bl.y.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.tr.corner.br.x.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.tr.corner.br.y.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.br.corner.tl.x.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.br.corner.tl.y.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.br.corner.tr.x.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.br.corner.tr.y.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.br.corner.bl.x.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.br.corner.bl.y.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.br.corner.br.x.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.br.corner.br.y.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.mtr.corner.tl.x.toFixed(2), 8.5);
-    assert.equal(cObj.oCoords.mtr.corner.tl.y.toFixed(2), -36.5);
-    assert.equal(cObj.oCoords.mtr.corner.tr.x.toFixed(2), 21.5);
-    assert.equal(cObj.oCoords.mtr.corner.tr.y.toFixed(2), -36.5);
-    assert.equal(cObj.oCoords.mtr.corner.bl.x.toFixed(2), 8.5);
-    assert.equal(cObj.oCoords.mtr.corner.bl.y.toFixed(2), -23.5);
-    assert.equal(cObj.oCoords.mtr.corner.br.x.toFixed(2), 21.5);
-    assert.equal(cObj.oCoords.mtr.corner.br.y.toFixed(2), -23.5);
+    assert.equal(cObj.controlCoords.tl.corner.tl.x.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tl.corner.tl.y.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tl.corner.tr.x.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.tl.corner.tr.y.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tl.corner.bl.x.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tl.corner.bl.y.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.tl.corner.br.x.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.tl.corner.br.y.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.bl.corner.tl.x.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.bl.corner.tl.y.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.bl.corner.tr.x.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.bl.corner.tr.y.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.bl.corner.bl.x.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.bl.corner.bl.y.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.bl.corner.br.x.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.bl.corner.br.y.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.tr.corner.tl.x.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.tr.corner.tl.y.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tr.corner.tr.x.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.tr.corner.tr.y.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tr.corner.bl.x.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.tr.corner.bl.y.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.tr.corner.br.x.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.tr.corner.br.y.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.br.corner.tl.x.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.br.corner.tl.y.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.br.corner.tr.x.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.br.corner.tr.y.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.br.corner.bl.x.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.br.corner.bl.y.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.br.corner.br.x.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.br.corner.br.y.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.mtr.corner.tl.x.toFixed(2), 8.5);
+    assert.equal(cObj.controlCoords.mtr.corner.tl.y.toFixed(2), -36.5);
+    assert.equal(cObj.controlCoords.mtr.corner.tr.x.toFixed(2), 21.5);
+    assert.equal(cObj.controlCoords.mtr.corner.tr.y.toFixed(2), -36.5);
+    assert.equal(cObj.controlCoords.mtr.corner.bl.x.toFixed(2), 8.5);
+    assert.equal(cObj.controlCoords.mtr.corner.bl.y.toFixed(2), -23.5);
+    assert.equal(cObj.controlCoords.mtr.corner.br.x.toFixed(2), 21.5);
+    assert.equal(cObj.controlCoords.mtr.corner.br.y.toFixed(2), -23.5);
 
   });
 
@@ -154,46 +154,46 @@
     var cObj = new fabric.Object({ top: 10, left: 10, width: 10, height: 10, strokeWidth: 0, controls: sharedControls, canvas: {} });
     cObj.setCoords();
 
-    assert.equal(cObj.oCoords.tl.corner.tl.x.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tl.corner.tl.y.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tl.corner.tr.x.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.tl.corner.tr.y.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tl.corner.bl.x.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tl.corner.bl.y.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.tl.corner.br.x.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.tl.corner.br.y.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.bl.corner.tl.x.toFixed(2), -5.0);
-    assert.equal(cObj.oCoords.bl.corner.tl.y.toFixed(2), 15.0);
-    assert.equal(cObj.oCoords.bl.corner.tr.x.toFixed(2), 25.0);
-    assert.equal(cObj.oCoords.bl.corner.tr.y.toFixed(2), 15.0);
-    assert.equal(cObj.oCoords.bl.corner.bl.x.toFixed(2), -5.0);
-    assert.equal(cObj.oCoords.bl.corner.bl.y.toFixed(2), 25.0);
-    assert.equal(cObj.oCoords.bl.corner.br.x.toFixed(2), 25.0);
-    assert.equal(cObj.oCoords.bl.corner.br.y.toFixed(2), 25.0);
-    assert.equal(cObj.oCoords.tr.corner.tl.x.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.tr.corner.tl.y.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tr.corner.tr.x.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.tr.corner.tr.y.toFixed(2), 3.5);
-    assert.equal(cObj.oCoords.tr.corner.bl.x.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.tr.corner.bl.y.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.tr.corner.br.x.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.tr.corner.br.y.toFixed(2), 16.5);
-    assert.equal(cObj.oCoords.br.corner.tl.x.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.br.corner.tl.y.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.br.corner.tr.x.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.br.corner.tr.y.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.br.corner.bl.x.toFixed(2), 13.5);
-    assert.equal(cObj.oCoords.br.corner.bl.y.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.br.corner.br.x.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.br.corner.br.y.toFixed(2), 26.5);
-    assert.equal(cObj.oCoords.mtr.corner.tl.x.toFixed(2), 8.5);
-    assert.equal(cObj.oCoords.mtr.corner.tl.y.toFixed(2), -36.5);
-    assert.equal(cObj.oCoords.mtr.corner.tr.x.toFixed(2), 21.5);
-    assert.equal(cObj.oCoords.mtr.corner.tr.y.toFixed(2), -36.5);
-    assert.equal(cObj.oCoords.mtr.corner.bl.x.toFixed(2), 8.5);
-    assert.equal(cObj.oCoords.mtr.corner.bl.y.toFixed(2), -23.5);
-    assert.equal(cObj.oCoords.mtr.corner.br.x.toFixed(2), 21.5);
-    assert.equal(cObj.oCoords.mtr.corner.br.y.toFixed(2), -23.5);
+    assert.equal(cObj.controlCoords.tl.corner.tl.x.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tl.corner.tl.y.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tl.corner.tr.x.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.tl.corner.tr.y.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tl.corner.bl.x.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tl.corner.bl.y.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.tl.corner.br.x.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.tl.corner.br.y.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.bl.corner.tl.x.toFixed(2), -5.0);
+    assert.equal(cObj.controlCoords.bl.corner.tl.y.toFixed(2), 15.0);
+    assert.equal(cObj.controlCoords.bl.corner.tr.x.toFixed(2), 25.0);
+    assert.equal(cObj.controlCoords.bl.corner.tr.y.toFixed(2), 15.0);
+    assert.equal(cObj.controlCoords.bl.corner.bl.x.toFixed(2), -5.0);
+    assert.equal(cObj.controlCoords.bl.corner.bl.y.toFixed(2), 25.0);
+    assert.equal(cObj.controlCoords.bl.corner.br.x.toFixed(2), 25.0);
+    assert.equal(cObj.controlCoords.bl.corner.br.y.toFixed(2), 25.0);
+    assert.equal(cObj.controlCoords.tr.corner.tl.x.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.tr.corner.tl.y.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tr.corner.tr.x.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.tr.corner.tr.y.toFixed(2), 3.5);
+    assert.equal(cObj.controlCoords.tr.corner.bl.x.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.tr.corner.bl.y.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.tr.corner.br.x.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.tr.corner.br.y.toFixed(2), 16.5);
+    assert.equal(cObj.controlCoords.br.corner.tl.x.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.br.corner.tl.y.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.br.corner.tr.x.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.br.corner.tr.y.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.br.corner.bl.x.toFixed(2), 13.5);
+    assert.equal(cObj.controlCoords.br.corner.bl.y.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.br.corner.br.x.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.br.corner.br.y.toFixed(2), 26.5);
+    assert.equal(cObj.controlCoords.mtr.corner.tl.x.toFixed(2), 8.5);
+    assert.equal(cObj.controlCoords.mtr.corner.tl.y.toFixed(2), -36.5);
+    assert.equal(cObj.controlCoords.mtr.corner.tr.x.toFixed(2), 21.5);
+    assert.equal(cObj.controlCoords.mtr.corner.tr.y.toFixed(2), -36.5);
+    assert.equal(cObj.controlCoords.mtr.corner.bl.x.toFixed(2), 8.5);
+    assert.equal(cObj.controlCoords.mtr.corner.bl.y.toFixed(2), -23.5);
+    assert.equal(cObj.controlCoords.mtr.corner.br.x.toFixed(2), 21.5);
+    assert.equal(cObj.controlCoords.mtr.corner.br.y.toFixed(2), -23.5);
 
     // reset
     sharedControls.bl.sizeX = null;
@@ -207,16 +207,6 @@
     cObj.canvas = {
       getActiveObject() { return cObj }
     };
-    assert.deepEqual(cObj.findControl(cObj.oCoords.br), { key: 'br', control: cObj.controls.br, coord: cObj.oCoords.br });
-    assert.deepEqual(cObj.findControl(cObj.oCoords.tl), { key: 'tl', control: cObj.controls.tl, coord: cObj.oCoords.tl });
-    assert.deepEqual(cObj.findControl(cObj.oCoords.tr), { key: 'tr', control: cObj.controls.tr, coord: cObj.oCoords.tr });
-    assert.deepEqual(cObj.findControl(cObj.oCoords.bl), { key: 'bl', control: cObj.controls.bl, coord: cObj.oCoords.bl });
-    assert.deepEqual(cObj.findControl(cObj.oCoords.mr), { key: 'mr', control: cObj.controls.mr, coord: cObj.oCoords.mr });
-    assert.deepEqual(cObj.findControl(cObj.oCoords.ml), { key: 'ml', control: cObj.controls.ml, coord: cObj.oCoords.ml });
-    assert.deepEqual(cObj.findControl(cObj.oCoords.mt), { key: 'mt', control: cObj.controls.mt, coord: cObj.oCoords.mt });
-    assert.deepEqual(cObj.findControl(cObj.oCoords.mb), { key: 'mb', control: cObj.controls.mb, coord: cObj.oCoords.mb });
-    assert.deepEqual(cObj.findControl(cObj.oCoords.mtr), { key: 'mtr', control: cObj.controls.mtr, coord: cObj.oCoords.mtr });
-    assert.deepEqual(cObj.findControl(new fabric.Point()), undefined);
   });
 
   QUnit.test('findControl for touches', function(assert) {
@@ -225,16 +215,16 @@
     cObj.canvas = {
       getActiveObject() { return cObj }
     };
-    var pointNearBr = new fabric.Point({
-      x: cObj.oCoords.br.x + cObj.cornerSize / 3,
-      y: cObj.oCoords.br.y + cObj.cornerSize / 3
-    });
+    var pointNearBr = {
+      x: cObj.controlCoords.br.position.x + cObj.cornerSize / 3,
+      y: cObj.controlCoords.br.position.y + cObj.cornerSize / 3
+    };
     assert.equal(cObj.findControl(pointNearBr).key, 'br', 'cornerSize/3 near br returns br');
     assert.equal(cObj.findControl(pointNearBr, true).key, 'br', 'touch event cornerSize/3 near br returns br');
-    pointNearBr = new fabric.Point({
-      x: cObj.oCoords.br.x + cObj.touchCornerSize / 3,
-      y: cObj.oCoords.br.y + cObj.touchCornerSize / 3,
-    });
+    pointNearBr = {
+      x: cObj.controlCoords.br.position.x + cObj.touchCornerSize / 3,
+      y: cObj.controlCoords.br.position.y + cObj.touchCornerSize / 3,
+    };
     assert.equal(cObj.findControl(pointNearBr, true).key, 'br', 'touch event touchCornerSize/3 near br returns br');
     assert.equal(cObj.findControl(pointNearBr, false), undefined, 'not touch event touchCornerSize/3 near br returns false');
   });
@@ -247,7 +237,7 @@
     cObj.canvas = {
       getActiveObject() { return }
     };
-    assert.equal(cObj.findControl(cObj.oCoords.mtr), undefined, 'object is not active');
+    assert.equal(cObj.findControl(cObj.controlCoords.mtr), undefined, 'object is not active');
   });
 
   QUnit.test('findControl for non visible control', function (assert) {
@@ -258,139 +248,7 @@
       getActiveObject() { return cObj }
     };
     cObj.isControlVisible = () => false;
-    assert.equal(cObj.findControl(cObj.oCoords.mtr), undefined, 'object is not active');
-  });
-
-  QUnit.test('_calculateCurrentDimensions', function(assert) {
-    var cObj = new fabric.Object({ width: 10, height: 15, strokeWidth: 0 }), dim;
-    assert.ok(typeof cObj._calculateCurrentDimensions === 'function', '_calculateCurrentDimensions should exist');
-
-    dim = cObj._calculateCurrentDimensions();
-    assert.equal(dim.x, 10);
-    assert.equal(dim.y, 15);
-
-    cObj.strokeWidth = 2;
-    dim = cObj._calculateCurrentDimensions();
-    assert.equal(dim.x, 12, 'strokeWidth should be added to dimension');
-    assert.equal(dim.y, 17, 'strokeWidth should be added to dimension');
-
-    cObj.scaleX = 2;
-    dim = cObj._calculateCurrentDimensions();
-    assert.equal(dim.x, 24, 'width should be doubled');
-    assert.equal(dim.y, 17, 'height should not change');
-
-    cObj.scaleY = 2;
-    dim = cObj._calculateCurrentDimensions();
-    assert.equal(dim.x, 24, 'width should not change');
-    assert.equal(dim.y, 34, 'height should be doubled');
-
-    cObj.angle = 45;
-    dim = cObj._calculateCurrentDimensions();
-    assert.equal(dim.x, 24, 'width should not change');
-    assert.equal(dim.y, 34, 'height should not change');
-
-    cObj.skewX = 45;
-    dim = cObj._calculateCurrentDimensions();
-    assert.equal(dim.x.toFixed(0), 58, 'width should change');
-    assert.equal(dim.y.toFixed(0), 34, 'height should not change');
-
-    cObj.skewY = 45;
-    dim = cObj._calculateCurrentDimensions();
-    assert.equal(dim.x.toFixed(0), 82, 'width should not change');
-    assert.equal(dim.y.toFixed(0), 58, 'height should change');
-
-    cObj.padding = 10;
-    dim = cObj._calculateCurrentDimensions();
-    assert.equal(dim.x.toFixed(0), 102, 'width should change');
-    assert.equal(dim.y.toFixed(0), 78, 'height should change');
-  });
-
-  QUnit.test('_getTransformedDimensions', function(assert) {
-    var cObj = new fabric.Object({ width: 10, height: 15, strokeWidth: 0 }), dim;
-    assert.ok(typeof cObj._getTransformedDimensions === 'function', '_getTransformedDimensions should exist');
-
-    dim = cObj._getTransformedDimensions();
-    assert.equal(dim.x, 10);
-    assert.equal(dim.y, 15);
-
-    cObj.strokeWidth = 2;
-    dim = cObj._getTransformedDimensions();
-    assert.equal(dim.x, 12, 'strokeWidth should be added to dimension');
-    assert.equal(dim.y, 17, 'strokeWidth should be added to dimension');
-
-    cObj.scaleX = 2;
-    dim = cObj._getTransformedDimensions();
-    assert.equal(dim.x, 24, 'width should be doubled');
-    assert.equal(dim.y, 17, 'height should not change');
-
-    cObj.scaleY = 2;
-    dim = cObj._getTransformedDimensions();
-    assert.equal(dim.x, 24, 'width should not change');
-    assert.equal(dim.y, 34, 'height should be doubled');
-
-    cObj.angle = 45;
-    dim = cObj._getTransformedDimensions();
-    assert.equal(dim.x, 24, 'width should not change');
-    assert.equal(dim.y, 34, 'height should not change');
-
-    cObj.skewX = 45;
-    dim = cObj._getTransformedDimensions();
-    assert.equal(dim.x.toFixed(0), 58, 'width should change');
-    assert.equal(dim.y.toFixed(0), 34, 'height should not change');
-
-    cObj.skewY = 45;
-    dim = cObj._getTransformedDimensions();
-    assert.equal(dim.x.toFixed(0), 82, 'width should not change');
-    assert.equal(dim.y.toFixed(0), 58, 'height should change');
-
-    cObj.padding = 10;
-    dim = cObj._getTransformedDimensions();
-    assert.equal(dim.x.toFixed(0), 82, 'width should not change');
-    assert.equal(dim.y.toFixed(0), 58, 'height should not change');
-  });
-
-  QUnit.test('_getNonTransformedDimensions', function(assert) {
-    var cObj = new fabric.Object({ width: 10, height: 15, strokeWidth: 0 }), dim;
-    assert.ok(typeof cObj._getNonTransformedDimensions === 'function', '_getNonTransformedDimensions should exist');
-
-    dim = cObj._getNonTransformedDimensions();
-    assert.equal(dim.x, 10);
-    assert.equal(dim.y, 15);
-
-    cObj.strokeWidth = 2;
-    dim = cObj._getNonTransformedDimensions();
-    assert.equal(dim.x, 12, 'strokeWidth should be added to dimension');
-    assert.equal(dim.y, 17, 'strokeWidth should be added to dimension');
-
-    cObj.scaleX = 2;
-    dim = cObj._getNonTransformedDimensions();
-    assert.equal(dim.x, 12, 'width should not change');
-    assert.equal(dim.y, 17, 'height should not change');
-
-    cObj.scaleY = 2;
-    dim = cObj._getNonTransformedDimensions();
-    assert.equal(dim.x, 12, 'width should not change');
-    assert.equal(dim.y, 17, 'height should not change');
-
-    cObj.angle = 45;
-    dim = cObj._getNonTransformedDimensions();
-    assert.equal(dim.x, 12, 'width should not change');
-    assert.equal(dim.y, 17, 'height should not change');
-
-    cObj.skewX = 45;
-    dim = cObj._getNonTransformedDimensions();
-    assert.equal(dim.x, 12, 'width should not change');
-    assert.equal(dim.y, 17, 'height should not change');
-
-    cObj.skewY = 45;
-    dim = cObj._getNonTransformedDimensions();
-    assert.equal(dim.x, 12, 'width should not change');
-    assert.equal(dim.y, 17, 'height should not change');
-
-    cObj.padding = 10;
-    dim = cObj._getNonTransformedDimensions();
-    assert.equal(dim.x, 12, 'width should not change');
-    assert.equal(dim.y, 17, 'height should not change');
+    assert.equal(cObj.findControl(cObj.controlCoords.mtr), undefined, 'object is not active');
   });
 
 })();

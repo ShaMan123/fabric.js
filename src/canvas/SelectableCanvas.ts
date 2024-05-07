@@ -9,22 +9,12 @@ import type {
   TPointerEvent,
   Transform,
 } from '../EventTypeDefs';
-import {
-  addTransformToObject,
-  saveObjectTransform,
-} from '../util/misc/objectTransforms';
+import { addTransformToObject } from '../util/misc/objectTransforms';
 import type { TCanvasSizeOptions } from './StaticCanvas';
 import { StaticCanvas } from './StaticCanvas';
 import { isCollection } from '../Collection';
 import { isTransparent } from '../util/misc/isTransparent';
-import type {
-  TMat2D,
-  TOriginX,
-  TOriginY,
-  TSize,
-  TSVGReviver,
-} from '../typedefs';
-import { degreesToRadians } from '../util/misc/radiansDegreesConversion';
+import type { TMat2D, TSize, TSVGReviver } from '../typedefs';
 import { getPointer, isTouchEvent } from '../util/dom_event';
 import type { IText } from '../shapes/IText/IText';
 import type { BaseBrush } from '../brushes/BaseBrush';
@@ -32,11 +22,12 @@ import { pick } from '../util/misc/pick';
 import { sendPointToPlane } from '../util/misc/planeChange';
 import { cos, createCanvasElement, sin } from '../util';
 import { CanvasDOMManager } from './DOMManagers/CanvasDOMManager';
-import { BOTTOM, CENTER, LEFT, RIGHT, TOP } from '../constants';
+import { BOTTOM, LEFT, RIGHT, TOP } from '../constants';
 import type { CanvasOptions } from './CanvasOptions';
 import { canvasDefaults } from './CanvasOptions';
 import { Intersection } from '../Intersection';
 import { isActiveSelection } from '../util/typeAssertions';
+import { calcPlaneRotation } from '../util/misc/matrix';
 
 /**
  * Canvas class
@@ -346,9 +337,10 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
   _chooseObjectsToRender(): FabricObject[] {
     const activeObject = this._activeObject;
     return !this.preserveObjectStacking && activeObject
-      ? this._objects
-          .filter((object) => !object.group && object !== activeObject)
-          .concat(activeObject)
+      ? (!activeObject.group
+          ? this._objects.filter((object) => object !== activeObject)
+          : this._objects
+        ).concat(activeObject)
       : this._objects;
   }
 
@@ -494,7 +486,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
 
   /**
    * This method will take in consideration a modifier key pressed and the control we are
-   * about to drag, and try to guess the anchor point ( origin ) of the transormation.
+   * about to drag, and try to guess the anchor point ( origin ) of the transformation.
    * This should be really in the realm of controls, and we should remove specific code for legacy
    * embedded actions.
    * @TODO this probably deserve discussion/rediscovery and change/refactor
@@ -531,43 +523,6 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
   }
 
   /**
-   * Given the control clicked, determine the origin of the transform.
-   * This is bad because controls can totally have custom names
-   * should disappear before release 4.0
-   * @private
-   * @deprecated
-   */
-  _getOriginFromCorner(
-    target: FabricObject,
-    controlName: string
-  ): { x: TOriginX; y: TOriginY } {
-    const origin = {
-      x: target.originX,
-      y: target.originY,
-    };
-
-    if (!controlName) {
-      return origin;
-    }
-
-    // is a left control ?
-    if (['ml', 'tl', 'bl'].includes(controlName)) {
-      origin.x = RIGHT;
-      // is a right control ?
-    } else if (['mr', 'tr', 'br'].includes(controlName)) {
-      origin.x = LEFT;
-    }
-    // is a top control ?
-    if (['tl', 'mt', 'tr'].includes(controlName)) {
-      origin.y = BOTTOM;
-      // is a bottom control ?
-    } else if (['bl', 'mb', 'br'].includes(controlName)) {
-      origin.y = TOP;
-    }
-    return origin;
-  }
-
-  /**
    * @private
    * @param {Event} e Event object
    * @param {FabricObject} target
@@ -578,14 +533,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
     target: FabricObject,
     alreadySelected: boolean
   ): void {
-    const pointer = target.group
-      ? // transform pointer to target's containing coordinate plane
-        sendPointToPlane(
-          this.getScenePoint(e),
-          undefined,
-          target.group.calcTransformMatrix()
-        )
-      : this.getScenePoint(e);
+    const pointer = this.getViewportPoint(e);
     const { key: corner = '', control } = target.getActiveControl() || {},
       actionHandler =
         alreadySelected && control
@@ -593,12 +541,12 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
           : dragHandler,
       action = getActionFromCorner(alreadySelected, corner, e, target),
       altKey = e[this.centeredKey as ModifierKey],
-      origin = this._shouldCenterTransform(target, action, altKey)
-        ? ({ x: CENTER, y: CENTER } as const)
-        : this._getOriginFromCorner(target, corner),
+      origin = (
+        control ? new Point(-control.x, -control.y) : new Point()
+      ).scalarAdd(0.5),
+      offset = pointer.subtract(target.getXY('left', 'top')),
       /**
-       * relative to target's containing coordinate plane
-       * both agree on every point
+       * relative to viewport
        **/
       transform: Transform = {
         target: target,
@@ -606,28 +554,15 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
         actionHandler,
         actionPerformed: false,
         corner,
-        scaleX: target.scaleX,
-        scaleY: target.scaleY,
-        skewX: target.skewX,
-        skewY: target.skewY,
-        offsetX: pointer.x - target.left,
-        offsetY: pointer.y - target.top,
         originX: origin.x,
         originY: origin.y,
         ex: pointer.x,
         ey: pointer.y,
         lastX: pointer.x,
         lastY: pointer.y,
-        theta: degreesToRadians(target.angle),
-        width: target.width,
-        height: target.height,
+        theta: calcPlaneRotation(target.calcTransformMatrixInViewport()),
         shiftKey: e.shiftKey,
         altKey,
-        original: {
-          ...saveObjectTransform(target),
-          originX: origin.x,
-          originY: origin.y,
-        },
       };
 
     this._currentTransform = transform;
@@ -653,10 +588,8 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
    */
   _drawSelection(ctx: CanvasRenderingContext2D): void {
     const { x, y, deltaX, deltaY } = this._groupSelector!,
-      start = new Point(x, y).transform(this.viewportTransform),
-      extent = new Point(x + deltaX, y + deltaY).transform(
-        this.viewportTransform
-      ),
+      start = new Point(x, y),
+      extent = new Point(x + deltaX, y + deltaY),
       strokeOffset = this.selectionLineWidth / 2;
     let minX = Math.min(start.x, extent.x),
       minY = Math.min(start.y, extent.y),
@@ -748,11 +681,12 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
   /**
    * Checks if the point is inside the object selection area including padding
    * @param {FabricObject} obj Object to test against
-   * @param {Object} [pointer] point in scene coordinates
+   * @param {Point} [scenePoint] point in scene coordinates
    * @return {Boolean} true if point is contained within an area of given object
    * @private
+   * @TODO revisit this ugly impl
    */
-  private _pointIsInObjectSelectionArea(obj: FabricObject, point: Point) {
+  private _pointIsInObjectSelectionArea(obj: FabricObject, scenePoint: Point) {
     // getCoords will already take care of group de-nesting
     let coords = obj.getCoords();
     const viewportZoom = this.getZoom();
@@ -783,7 +717,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
       // the idea behind this is that outside target check we don't need ot know
       // where those coords are
     }
-    return Intersection.isPointInPolygon(point, coords);
+    return Intersection.isPointInPolygon(scenePoint, coords);
   }
 
   /**
@@ -1148,8 +1082,9 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
 
     if (isActiveSelection(object) && prevActiveObject !== object) {
       object.set('canvas', this);
-      object.setCoords();
     }
+
+    object.invalidateCoords();
 
     return true;
   }
@@ -1237,7 +1172,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
       target._scaling = false;
     }
 
-    target.setCoords();
+    target.invalidateCoords();
 
     if (transform.actionPerformed) {
       this.fire('object:modified', options);
@@ -1253,7 +1188,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
     super.setViewportTransform(vpt);
     const activeObject = this._activeObject;
     if (activeObject) {
-      activeObject.setCoords();
+      activeObject.invalidateCoords();
     }
   }
 

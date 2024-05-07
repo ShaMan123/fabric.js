@@ -250,7 +250,7 @@ export class LayoutManager {
     } else {
       target.setPositionByOrigin(nextCenter, CENTER, CENTER);
       // invalidate
-      target.setCoords();
+      target.invalidateCoords();
       target.set('dirty', true);
     }
   }

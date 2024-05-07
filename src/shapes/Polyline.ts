@@ -6,6 +6,9 @@ import type { XY } from '../Point';
 import { Point } from '../Point';
 import type { Abortable, TClassProperties, TOptions } from '../typedefs';
 import { classRegistry } from '../ClassRegistry';
+import { LEFT, TOP } from '../constants';
+import type { CSSRules } from '../parser/typedefs';
+import { cloneDeep } from '../util/internals/cloneDeep';
 import { makeBoundingBoxFromPoints } from '../util/misc/boundingBoxFromPoints';
 import { calcDimensionsMatrix, transformPoint } from '../util/misc/matrix';
 import { projectStrokeOnPoints } from '../util/misc/projectStroke';
@@ -15,9 +18,7 @@ import { toFixed } from '../util/misc/toFixed';
 import { FabricObject, cacheProperties } from './Object/FabricObject';
 import type { FabricObjectProps, SerializedObjectProps } from './Object/types';
 import type { ObjectEvents } from '../EventTypeDefs';
-import { cloneDeep } from '../util/internals/cloneDeep';
-import { CENTER, LEFT, TOP } from '../constants';
-import type { CSSRules } from '../parser/typedefs';
+import { sendVectorToPlane } from '../util';
 
 export const polylineDefaultValues: Partial<TClassProperties<Polyline>> = {
   /**
@@ -205,67 +206,13 @@ export class Polyline<
       this._calcDimensions();
     this.set({ width, height, pathOffset, strokeOffset, strokeDiff });
     adjustPosition &&
-      this.setPositionByOrigin(
-        new Point(left + width / 2, top + height / 2),
-        CENTER,
-        CENTER
-      );
-  }
-
-  /**
-   * @deprecated intermidiate method to be removed, do not use
-   */
-  protected isStrokeAccountedForInDimensions() {
-    return this.exactBoundingBox;
-  }
-
-  /**
-   * @override stroke is taken in account in size
-   */
-  _getNonTransformedDimensions() {
-    return this.exactBoundingBox
-      ? // TODO: fix this
-        new Point(this.width, this.height)
-      : super._getNonTransformedDimensions();
-  }
-
-  /**
-   * @override stroke and skewing are taken into account when projecting stroke on points,
-   * therefore we don't want the default calculation to account for skewing as well.
-   * Though it is possible to pass `width` and `height` in `options`, doing so is very strange, use with discretion.
-   *
-   * @private
-   */
-  _getTransformedDimensions(options: any = {}) {
-    if (this.exactBoundingBox) {
-      let size: Point;
-      /* When `strokeUniform = true`, any changes to the properties require recalculating the `width` and `height` because
-        the stroke projections are affected.
-        When `strokeUniform = false`, we don't need to recalculate for scale transformations, as the effect of scale on
-        projections follows a linear function (e.g. scaleX of 2 just multiply width by 2)*/
-      if (
-        Object.keys(options).some(
-          (key) =>
-            this.strokeUniform ||
-            (this.constructor as typeof Polyline).layoutProperties.includes(
-              key as keyof TProjectStrokeOnPointsOptions
-            )
+      this.setRelativeCenterPoint(
+        // @TODO: needs testing
+        sendVectorToPlane(
+          new Point(left + width / 2, top + height / 2),
+          this.calcOwnMatrix()
         )
-      ) {
-        const { width, height } = this._calcDimensions(options);
-        size = new Point(options.width ?? width, options.height ?? height);
-      } else {
-        size = new Point(
-          options.width ?? this.width,
-          options.height ?? this.height
-        );
-      }
-      return size.multiply(
-        new Point(options.scaleX || this.scaleX, options.scaleY || this.scaleY)
       );
-    } else {
-      return super._getTransformedDimensions(options);
-    }
   }
 
   /**

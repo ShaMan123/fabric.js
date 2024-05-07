@@ -109,7 +109,9 @@
   });
 
   QUnit.test('createRotateMatrix with origin', function (assert) {
-    var matrix = fabric.util.createRotateMatrix({ angle: 90 }, { x: 100, y: 200 });
+    var matrix = fabric.util.multiplyTransformMatrices(
+      fabric.util.createTranslateMatrix(100, 200),
+      fabric.util.createRotateMatrix({ angle: 90 }));
     var expected = [
       0,
       1,
@@ -408,11 +410,23 @@
 
   QUnit.test('multiplyTransformMatrices', function(assert) {
     assert.ok(typeof fabric.util.multiplyTransformMatrices === 'function');
-    var m1 = [1, 1, 1, 1, 1, 1], m2 = [1, 1, 1, 1, 1, 1], m3;
-    m3 = fabric.util.multiplyTransformMatrices(m1, m2);
-    assert.deepEqual(m3, [2, 2, 2, 2, 3, 3]);
-    m3 = fabric.util.multiplyTransformMatrices(m1, m2, true);
-    assert.deepEqual(m3, [2, 2, 2, 2, 0, 0]);
+    const m1 = [1, 2, 3, 4, 10, 20], m2 = [5, 6, 7, 8, 30, 40];
+    assert.deepEqual(fabric.util.multiplyTransformMatrices(m1, m2), [
+      23,
+      34,
+      31,
+      46,
+      160,
+      240
+    ]);
+    assert.deepEqual(fabric.util.multiplyTransformMatrices(m1, m2, true), [
+      23,
+      34,
+      31,
+      46,
+      0,
+      0
+    ]);
   });
 
   QUnit.test('multiplyTransformMatrixArray', function (assert) {
@@ -520,7 +534,7 @@
     (function() {
       const initialVector = new fabric.Point(1,0),
         finalVector = new fabric.Point(0,1);
-      
+
       assert.equal(
         fabric.util.isBetweenVectors(
           new fabric.Point(0.5, 0.5),
@@ -599,7 +613,7 @@
     (function() {
       const initialVector = new fabric.Point(1, 0),
         finalVector = new fabric.Point(1, 0.5);
-      
+
       assert.equal(
         fabric.util.isBetweenVectors(
           new fabric.Point(1, 0.25),
@@ -640,7 +654,7 @@
         fabric.util.isBetweenVectors(
           new fabric.Point(1, 0.2),
           initialVector,
-          finalVector 
+          finalVector
         ),
         true,
         'isBetweenVectors acute angle #5'
@@ -660,7 +674,7 @@
     (function() {
       const initialVector = new fabric.Point(1, 0.5),
         finalVector = new fabric.Point(1, 0);
-      
+
       assert.equal(
         fabric.util.isBetweenVectors(
           new fabric.Point(1, 0.25),
@@ -701,7 +715,7 @@
         fabric.util.isBetweenVectors(
           new fabric.Point(1, -0.2),
           initialVector,
-          finalVector 
+          finalVector
         ),
         true,
         'isBetweenVectors obtuse angle #5'

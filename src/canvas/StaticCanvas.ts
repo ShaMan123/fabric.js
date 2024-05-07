@@ -44,6 +44,7 @@ import type { StaticCanvasOptions } from './StaticCanvasOptions';
 import { staticCanvasDefaults } from './StaticCanvasOptions';
 import { log, FabricError } from '../util/internals/console';
 import { getDevicePixelRatio } from '../env';
+import { CanvasBBox } from '../shapes/Object/BBox';
 
 /**
  * Having both options in TCanvasSizeOptions set to true transform the call in a calcOffset
@@ -189,7 +190,6 @@ export class StaticCanvas<
       height: this.height || this.elements.lower.el.height || 0,
     });
     this.viewportTransform = [...this.viewportTransform];
-    this.calcViewportBoundaries();
   }
 
   protected initElements(el?: string | HTMLCanvasElement) {
@@ -224,7 +224,7 @@ export class StaticCanvas<
       obj.canvas.remove(obj);
     }
     obj._set('canvas', this);
-    obj.setCoords();
+    obj.invalidateCoords();
     this.fire('object:added', { target: obj });
     obj.fire('added', { target: this });
   }
@@ -379,22 +379,7 @@ export class StaticCanvas<
    * @param {Array} vpt a Canvas 2D API transform matrix
    */
   setViewportTransform(vpt: TMat2D) {
-    const backgroundObject = this.backgroundImage,
-      overlayObject = this.overlayImage,
-      len = this._objects.length;
-
-    this.viewportTransform = vpt;
-    for (let i = 0; i < len; i++) {
-      const object = this._objects[i];
-      object.group || object.setCoords();
-    }
-    if (backgroundObject) {
-      backgroundObject.setCoords();
-    }
-    if (overlayObject) {
-      overlayObject.setCoords();
-    }
-    this.calcViewportBoundaries();
+    this.viewportTransform = [...vpt];
     this.renderOnAddRemove && this.requestRenderAll();
   }
 
@@ -525,25 +510,25 @@ export class StaticCanvas<
   }
 
   /**
-   * Calculate the position of the 4 corner of canvas with current viewportTransform.
-   * helps to determinate when an object is in the current rendering viewport
+   * Describe the visible bounding box of the canvas
+   * if canvas is **NOT** transformed the points are equal to the four corners of the `HTMLCanvasElement`
+   * if canvas is transformed the points describe the distance from canvas origin,
+   * `tl` being the viewport origin which is the `tl` corner of the `HTMLCanvasElement`.
    */
-  calcViewportBoundaries(): TCornerPoint {
-    const width = this.width,
-      height = this.height,
-      iVpt = invertTransform(this.viewportTransform),
-      a = transformPoint({ x: 0, y: 0 }, iVpt),
-      b = transformPoint({ x: width, y: height }, iVpt),
-      // we don't support vpt flipping
-      // but the code is robust enough to mostly work with flipping
+  getViewportBBox() {
+    // we don't support vpt flipping
+    // but the code is robust enough to mostly work with flipping
+    const iVpt = invertTransform(this.viewportTransform),
+      a = new Point().transform(iVpt),
+      b = new Point(this.width, this.height).transform(iVpt),
       min = a.min(b),
       max = a.max(b);
-    return (this.vptCoords = {
+    return {
       tl: min,
       tr: new Point(max.x, min.y),
       bl: new Point(min.x, max.y),
       br: max,
-    });
+    };
   }
 
   cancelRequestedRender() {
@@ -569,7 +554,6 @@ export class StaticCanvas<
 
     const v = this.viewportTransform,
       path = this.clipPath;
-    this.calcViewportBoundaries();
     this.clearContext(ctx);
     ctx.imageSmoothingEnabled = this.imageSmoothingEnabled;
     // @ts-expect-error node-canvas stuff
@@ -635,9 +619,13 @@ export class StaticCanvas<
    * @param {Array} objects to render
    */
   _renderObjects(ctx: CanvasRenderingContext2D, objects: FabricObject[]) {
-    for (let i = 0, len = objects.length; i < len; ++i) {
-      objects[i] && objects[i].render(ctx);
-    }
+    const canvasBBox = CanvasBBox.bbox(this);
+    objects.forEach((object) => {
+      object &&
+        // @TODO: change
+        (!this.skipOffscreen || canvasBBox.overlaps(object.bbox)) &&
+        object.render(ctx);
+    });
   }
 
   /**
@@ -680,15 +668,8 @@ export class StaticCanvas<
     }
     if (object) {
       ctx.save();
-      const { skipOffscreen } = this;
-      // if the object doesn't move with the viewport,
-      // the offscreen concept does not apply;
-      this.skipOffscreen = needsVpt;
-      if (needsVpt) {
-        ctx.transform(...v);
-      }
+      needsVpt && ctx.transform(...v);
       object.render(ctx);
-      this.skipOffscreen = skipOffscreen;
       ctx.restore();
     }
   }
@@ -807,7 +788,7 @@ export class StaticCanvas<
    */
   _centerObject(object: FabricObject, center: Point) {
     object.setXY(center, CENTER, CENTER);
-    object.setCoords();
+    object.invalidateCoords();
     this.renderOnAddRemove && this.requestRenderAll();
   }
 
@@ -1437,12 +1418,10 @@ export class StaticCanvas<
     this.viewportTransform = newVp;
     this.width = scaledWidth;
     this.height = scaledHeight;
-    this.calcViewportBoundaries();
     this.renderCanvas(canvasEl.getContext('2d')!, objectsToRender);
     this.viewportTransform = vp;
     this.width = originalWidth;
     this.height = originalHeight;
-    this.calcViewportBoundaries();
     this.enableRetinaScaling = originalRetina;
     return canvasEl;
   }

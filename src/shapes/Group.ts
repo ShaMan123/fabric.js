@@ -1,4 +1,4 @@
-import type { CollectionEvents, ObjectEvents } from '../EventTypeDefs';
+import { classRegistry } from '../ClassRegistry';
 import { createCollectionMixin } from '../Collection';
 import type { TClassProperties, TSVGReviver, TOptions } from '../typedefs';
 import {
@@ -11,9 +11,8 @@ import {
 } from '../util/misc/objectEnlive';
 import { applyTransformToObject } from '../util/misc/objectTransforms';
 import { FabricObject } from './Object/FabricObject';
-import { Rect } from './Rect';
-import { classRegistry } from '../ClassRegistry';
 import type { FabricObjectProps, SerializedObjectProps } from './Object/types';
+import { Rect } from './Rect';
 import { log } from '../util/internals/console';
 import type {
   ImperativeLayoutOptions,
@@ -133,7 +132,7 @@ export class Group
    */
   constructor(objects: FabricObject[] = [], options: Partial<GroupProps> = {}) {
     // @ts-expect-error options error
-    super(options);
+    super({ _objects: [], ...options });
     this._objects = [...objects]; // Avoid unwanted mutations of Collection to affect the caller
 
     this.__objectSelectionTracker = this.__objectSelectionMonitor.bind(
@@ -280,15 +279,13 @@ export class Group
       (this._objects || []).forEach((object) => {
         object._set(key, value);
       });
+      // layout in case children need viewport coords
+      value &&
+        this._applyLayoutStrategy({
+          type: 'viewport',
+        });
     }
     return this;
-  }
-
-  /**
-   * @private
-   */
-  _shouldSetNestedCoords() {
-    return this.subTargetCheck;
   }
 
   /**
@@ -298,6 +295,14 @@ export class Group
   removeAll() {
     this._activeObjects = [];
     return this.remove(...this._objects);
+  }
+
+  /**
+   * @override recursively invalidate descendant coords as well
+   */
+  invalidateCoords() {
+    super.invalidateCoords();
+    this.forEachObject((object) => object.invalidateCoords());
   }
 
   /**
@@ -365,7 +370,7 @@ export class Group
         )
       );
     }
-    this._shouldSetNestedCoords() && object.setCoords();
+
     object._set('group', this);
     object._set('canvas', this.canvas);
     this._watchObject(true, object);
@@ -412,8 +417,9 @@ export class Group
           object.calcTransformMatrix()
         )
       );
-      object.setCoords();
     }
+    // invalidate coords in case group was transformed
+    object.invalidateCoords();
     this._watchObject(false, object);
     const index =
       this._activeObjects.length > 0 ? this._activeObjects.indexOf(object) : -1;
@@ -472,31 +478,23 @@ export class Group
    */
   drawObject(ctx: CanvasRenderingContext2D) {
     this._renderBackground(ctx);
-    for (let i = 0; i < this._objects.length; i++) {
+    const preserve = this.canvas?.preserveObjectStacking;
+    this._objects.forEach((object) => {
       // TODO: handle rendering edge case somehow
-      if (
-        this.canvas?.preserveObjectStacking &&
-        this._objects[i].group !== this
-      ) {
+      if (preserve && object.group !== this) {
         ctx.save();
         ctx.transform(...invertTransform(this.calcTransformMatrix()));
-        this._objects[i].render(ctx);
+        object.render(ctx);
         ctx.restore();
-      } else if (this._objects[i].group === this) {
-        this._objects[i].render(ctx);
+      } else if (
+        object.group === this &&
+        (preserve || !this._activeObjects.includes(object))
+        // && (!object.skipOffscreen || object.isOverlapping(this))
+      ) {
+        object.render(ctx);
       }
-    }
+    });
     this._drawClipPath(ctx, this.clipPath);
-  }
-
-  /**
-   * @override
-   * @return {Boolean}
-   */
-  setCoords() {
-    super.setCoords();
-    this._shouldSetNestedCoords() &&
-      this.forEachObject((object) => object.setCoords());
   }
 
   triggerLayout(options: ImperativeLayoutOptions = {}) {
@@ -689,7 +687,6 @@ export class Group
         target: group,
         targets: group.getObjects(),
       });
-      group.setCoords();
       return group;
     });
   }

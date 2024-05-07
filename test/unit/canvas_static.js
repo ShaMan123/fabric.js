@@ -1425,7 +1425,6 @@
     assert.equal(canvas.item(2), rect3);
 
     rect1.set({ top: 100 });
-    rect1.setCoords();
     canvas.sendObjectBackwards(rect1, true);
 
     assert.equal(canvas.item(1), rect1);
@@ -1482,7 +1481,6 @@
     assert.equal(canvas.item(2), rect3);
 
     rect2.set({ left: 200 });
-    rect2.setCoords();
     canvas.bringObjectForward(rect2, true);
 
     // rect2, rect3 do not overlap
@@ -1714,27 +1712,6 @@
     canvas.viewportTransform = fabric.StaticCanvas.getDefaults().viewportTransform;
   });
 
-  QUnit.test('setViewportTransform calls objects setCoords', function(assert) {
-    var vpt = [2, 0, 0, 2, 50, 50];
-    assert.deepEqual(canvas.viewportTransform, [1, 0, 0, 1, 0, 0], 'initial viewport is identity matrix');
-    var rect = new fabric.Rect({ width: 10, heigth: 10 });
-    var rectBg = new fabric.Rect({ width: 10, heigth: 10 });
-    var rectOverlay = new fabric.Rect({ width: 10, heigth: 10 });
-    canvas.add(rect);
-    canvas.cancelRequestedRender();
-    rectBg.canvas = canvas;
-    canvas.backgroundImage = rectBg;
-    rectOverlay.canvas = canvas;
-    canvas.overlayImage = rectOverlay;
-    assert.deepEqual(new fabric.Point(rect.oCoords.tl), new fabric.Point(0,0), 'rect oCoords are set for normal viewport');
-    assert.equal(rectBg.oCoords, undefined, 'rectBg oCoords are not set');
-    assert.equal(rectOverlay.oCoords, undefined, 'rectOverlay oCoords are not set');
-    canvas.setViewportTransform(vpt);
-    assert.deepEqual(new fabric.Point(rect.oCoords.tl), new fabric.Point(50,50), 'rect oCoords are set');
-    assert.deepEqual(new fabric.Point(rectBg.oCoords.tl),  new fabric.Point(50,50), 'rectBg oCoords are set');
-    assert.deepEqual(new fabric.Point(rectOverlay.oCoords.tl),  new fabric.Point(50,50), 'rectOverlay oCoords are set');
-  });
-
   QUnit.test('getZoom', function(assert) {
     assert.ok(typeof canvas.getZoom === 'function');
     var vpt = [2, 0, 0, 2, 50, 50];
@@ -1794,41 +1771,40 @@
     assert.equal(context, canvas.contextContainer, 'should return the context container');
   });
 
-  QUnit.test('calcViewportBoundaries', function(assert) {
-    assert.ok(typeof canvas.calcViewportBoundaries === 'function');
-    canvas.calcViewportBoundaries();
-    assert.deepEqual(canvas.vptCoords.tl, new fabric.Point(0, 0), 'tl is 0,0');
-    assert.deepEqual(canvas.vptCoords.tr, new fabric.Point(canvas.getWidth(), 0), 'tr is width, 0');
-    assert.deepEqual(canvas.vptCoords.bl, new fabric.Point(0, canvas.getHeight()), 'bl is 0, height');
-    assert.deepEqual(canvas.vptCoords.br, new fabric.Point(canvas.getWidth(), canvas.getHeight()), 'tl is width, height');
+  QUnit.test('getViewportBBox', function(assert) {
+    assert.ok(typeof canvas.getViewportBBox === 'function');
+    const { tl, tr, bl, br } = canvas.getViewportBBox();
+    assert.deepEqual(tl, new fabric.Point(0, 0), 'tl is 0,0');
+    assert.deepEqual(tr, new fabric.Point(canvas.getWidth(), 0), 'tr is width, 0');
+    assert.deepEqual(bl, new fabric.Point(0, canvas.getHeight()), 'bl is 0, height');
+    assert.deepEqual(br, new fabric.Point(canvas.getWidth(), canvas.getHeight()), 'tl is width, height');
   });
 
-  QUnit.test('calcViewportBoundaries with zoom', function(assert) {
-    assert.ok(typeof canvas.calcViewportBoundaries === 'function');
+  QUnit.test('getViewportBBox with zoom', function(assert) {
     canvas.setViewportTransform([2, 0, 0, 2, 0, 0]);
-    assert.deepEqual(canvas.vptCoords.tl, new fabric.Point(0, 0), 'tl is 0,0');
-    assert.deepEqual(canvas.vptCoords.tr, new fabric.Point(canvas.getWidth() / 2, 0), 'tl is 0,0');
-    assert.deepEqual(canvas.vptCoords.bl, new fabric.Point(0, canvas.getHeight() / 2), 'tl is 0,0');
-    assert.deepEqual(canvas.vptCoords.br, new fabric.Point(canvas.getWidth() / 2, canvas.getHeight() / 2), 'tl is 0,0');
+    const { tl, tr, bl, br } = canvas.getViewportBBox();
+    assert.deepEqual(tl, new fabric.Point(0, 0), 'tl is 0,0');
+    assert.deepEqual(tr, new fabric.Point(canvas.getWidth() / 2, 0), 'tl is 0,0');
+    assert.deepEqual(bl, new fabric.Point(0, canvas.getHeight() / 2), 'tl is 0,0');
+    assert.deepEqual(br, new fabric.Point(canvas.getWidth() / 2, canvas.getHeight() / 2), 'tl is 0,0');
   });
 
-  QUnit.test('calcViewportBoundaries with zoom and translation', function(assert) {
-    assert.ok(typeof canvas.calcViewportBoundaries === 'function');
+  QUnit.test('getViewportBBox with zoom and translation', function(assert) {
     canvas.setViewportTransform([2, 0, 0, 2, -60, 60]);
-    assert.deepEqual(canvas.vptCoords.tl, new fabric.Point(30, -30), 'tl is 0,0');
-    assert.deepEqual(canvas.vptCoords.tr, new fabric.Point(30 + canvas.getWidth() / 2, -30), 'tl is 0,0');
-    assert.deepEqual(canvas.vptCoords.bl, new fabric.Point(30, canvas.getHeight() / 2 - 30), 'tl is 0,0');
-    assert.deepEqual(canvas.vptCoords.br, new fabric.Point(30 + canvas.getWidth() / 2, canvas.getHeight() / 2 - 30), 'tl is 0,0');
+    const { tl, tr, bl, br } = canvas.getViewportBBox();
+    assert.deepEqual(tl, new fabric.Point(30, -30), 'tl is 0,0');
+    assert.deepEqual(tr, new fabric.Point(30 + canvas.getWidth() / 2, -30), 'tl is 0,0');
+    assert.deepEqual(bl, new fabric.Point(30, canvas.getHeight() / 2 - 30), 'tl is 0,0');
+    assert.deepEqual(br, new fabric.Point(30 + canvas.getWidth() / 2, canvas.getHeight() / 2 - 30), 'tl is 0,0');
   });
 
-  QUnit.test('calcViewportBoundaries with flipped zoom and translation', function (assert) {
-    assert.ok(typeof canvas.calcViewportBoundaries === 'function');
+  QUnit.test('getViewportBBox with flipped zoom and translation', function (assert) {
     canvas.setViewportTransform([2, 0, 0, -2, -60, 60]);
-    canvas.calcViewportBoundaries();
-    assert.deepEqual({ x: canvas.vptCoords.tl.x, y: canvas.vptCoords.tl.y }, { x: 30, y: -145 }, 'tl is 30, -145');
-    assert.deepEqual({ x: canvas.vptCoords.tr.x, y: canvas.vptCoords.tr.y }, { x: 130, y: -145 }, 'tr is 130, -145');
-    assert.deepEqual({ x: canvas.vptCoords.bl.x, y: canvas.vptCoords.bl.y }, { x: 30,  y: 30 }, 'bl is 30,-70');
-    assert.deepEqual({ x: canvas.vptCoords.br.x, y: canvas.vptCoords.br.y }, { x: 130,  y: 30 }, 'br is 130,-70');
+    const { tl, tr, bl, br } = canvas.getViewportBBox();
+    assert.deepEqual({ x: tl.x, y: tl.y }, { x: 30, y: -145 }, 'tl is 30, -145');
+    assert.deepEqual({ x: tr.x, y: tr.y }, { x: 130, y: -145 }, 'tr is 130, -145');
+    assert.deepEqual({ x: bl.x, y: bl.y }, { x: 30,  y: 30 }, 'bl is 30,-70');
+    assert.deepEqual({ x: br.x, y: br.y }, { x: 130,  y: 30 }, 'br is 130,-70');
   });
 
   QUnit.test('getRetinaScaling', function(assert) {

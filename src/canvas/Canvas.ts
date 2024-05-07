@@ -1049,14 +1049,11 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
       if (target.selectable && target.activeOn === 'down') {
         this.setActiveObject(target, e);
       }
-      const handle = target.findControl(
-        this.getViewportPoint(e),
-        isTouchEvent(e)
-      );
+      const viewportPoint = this.getViewportPoint(e);
+      const handle = target.findControl(viewportPoint, isTouchEvent(e));
       if (target === this._activeObject && (handle || !grouped)) {
         this._setupCurrentTransform(e, target, alreadySelected);
         const control = handle ? handle.control : undefined,
-          pointer = this.getScenePoint(e),
           mouseDownHandler =
             control && control.getMouseDownHandler(e, target, control);
         mouseDownHandler &&
@@ -1064,8 +1061,8 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
             control,
             e,
             this._currentTransform!,
-            pointer.x,
-            pointer.y
+            viewportPoint.x,
+            viewportPoint.y
           );
       }
     }
@@ -1133,7 +1130,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
 
     // We initially clicked in an empty area, so we draw a box for multiple selection
     if (groupSelector) {
-      const pointer = this.getScenePoint(e);
+      const pointer = this.getViewportPoint(e);
 
       groupSelector.deltaX = pointer.x - groupSelector.x;
       groupSelector.deltaY = pointer.y - groupSelector.y;
@@ -1277,48 +1274,33 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
    * @param {Event} e Event fired on mousemove
    */
   _transformObject(e: TPointerEvent) {
-    const scenePoint = this.getScenePoint(e),
-      transform = this._currentTransform!,
-      target = transform.target,
-      //  transform pointer to target's containing coordinate plane
-      //  both pointer and object should agree on every point
-      localPointer = target.group
-        ? sendPointToPlane(
-            scenePoint,
-            undefined,
-            target.group.calcTransformMatrix()
-          )
-        : scenePoint;
-    transform.shiftKey = e.shiftKey;
-    transform.altKey = !!this.centeredKey && e[this.centeredKey];
-
-    this._performTransformAction(e, transform, localPointer);
-    transform.actionPerformed && this.requestRenderAll();
+    this._performTransformAction(
+      e,
+      Object.assign(this._currentTransform!, {
+        shiftKey: e.shiftKey,
+        altKey: !!this.centeredKey && e[this.centeredKey],
+      })
+    ) && this.requestRenderAll();
   }
 
   /**
    * @private
    */
-  _performTransformAction(
-    e: TPointerEvent,
-    transform: Transform,
-    pointer: Point
-  ) {
-    const x = pointer.x,
-      y = pointer.y,
-      action = transform.action,
-      actionHandler = transform.actionHandler;
+  _performTransformAction(e: TPointerEvent, transform: Transform) {
+    const { target, action, actionHandler } = transform;
     let actionPerformed = false;
-    // this object could be created from the function in the control handlers
-
     if (actionHandler) {
-      actionPerformed = actionHandler(e, transform, x, y);
+      const pointer = this.getViewportPoint(e);
+      actionPerformed = actionHandler(e, transform, pointer.x, pointer.y);
+      transform.lastX = pointer.x;
+      transform.lastY = pointer.y;
     }
     if (action === 'drag' && actionPerformed) {
-      transform.target.isMoving = true;
-      this.setCursor(transform.target.moveCursor || this.moveCursor);
+      target.isMoving = true;
+      this.setCursor(target.moveCursor || this.moveCursor);
     }
-    transform.actionPerformed = transform.actionPerformed || actionPerformed;
+    return (transform.actionPerformed =
+      transform.actionPerformed || actionPerformed);
   }
 
   /**
@@ -1332,7 +1314,6 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
       this.setCursor(this.defaultCursor);
       return;
     }
-    let hoverCursor = target.hoverCursor || this.hoverCursor;
     const activeSelection = isActiveSelection(this._activeObject)
         ? this._activeObject
         : null,
@@ -1345,17 +1326,13 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
         target.findControl(this.getViewportPoint(e));
 
     if (!corner) {
-      if ((target as Group).subTargetCheck) {
-        // hoverCursor should come from top-most subTarget,
-        // so we walk the array backwards
-        this.targets
-          .concat()
-          .reverse()
-          .map((_target) => {
-            hoverCursor = _target.hoverCursor || hoverCursor;
-          });
-      }
-      this.setCursor(hoverCursor);
+      // hoverCursor should come from top-most subTarget
+      const subTargetHoverCursor =
+        (target as Group).subTargetCheck &&
+        this.targets.find((target) => target.hoverCursor)?.hoverCursor;
+      this.setCursor(
+        subTargetHoverCursor || target.hoverCursor || this.hoverCursor
+      );
     } else {
       const control = corner.control;
       this.setCursor(control.cursorStyleHandler(e, control, target));

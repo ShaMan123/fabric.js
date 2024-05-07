@@ -32,8 +32,10 @@ export type TQrDecomposeOut = Required<
   Omit<TComposeMatrixArgs, 'flipX' | 'flipY'>
 >;
 
-export const isIdentityMatrix = (mat: TMat2D) =>
-  mat.every((value, index) => value === iMatrix[index]);
+export const isIdentityMatrix = (mat: TMat2D) => isMatrixEqual(mat, iMatrix);
+
+export const isMatrixEqual = (a: TMat2D, b: TMat2D) =>
+  a.every((value, index) => value === b[index]);
 
 /**
  * Apply transform t to point p
@@ -164,22 +166,20 @@ export const createTranslateMatrix = (x: number, y = 0): TMat2D => [
  * @param {XY} [pivotPoint] pivot point to rotate around
  * @returns {TMat2D} matrix
  */
-export function createRotateMatrix(
-  { angle = 0 }: TRotateMatrixArgs = {},
-  { x = 0, y = 0 }: Partial<XY> = {}
-): TMat2D {
-  const angleRadiant = degreesToRadians(angle),
-    cosValue = cos(angleRadiant),
-    sinValue = sin(angleRadiant);
-  return [
-    cosValue,
-    sinValue,
-    -sinValue,
-    cosValue,
-    x ? x - (cosValue * x - sinValue * y) : 0,
-    y ? y - (sinValue * x + cosValue * y) : 0,
-  ];
-}
+export const createRotateMatrix = ({
+  angle = 0,
+  rotation,
+}:
+  | { angle: TDegree; rotation?: never }
+  | { angle?: never; rotation?: TRadian }): TMat2D => {
+  if (!angle && !rotation) {
+    return iMatrix.concat() as TMat2D;
+  }
+  const theta = rotation ?? degreesToRadians(angle),
+    cosin = cos(theta),
+    sinus = sin(theta);
+  return [cosin, sinus, -sinus, cosin, 0, 0];
+};
 
 /**
  * Generate a scale matrix around the point (0,0)
@@ -253,6 +253,22 @@ export const createSkewYMatrix = (skewValue: TDegree): TMat2D => [
   0,
   0,
 ];
+
+export const calcShearMatrix = ({
+  skewX,
+  skewY,
+  shearX,
+  shearY,
+}: {
+  skewX?: TDegree;
+  skewY?: TDegree;
+  shearX?: number;
+  shearY?: number;
+}) =>
+  multiplyTransformMatrices(
+    [1, 0, shearX ?? (skewX ? Math.tan(degreesToRadians(skewX)) : 0), 1, 0, 0],
+    [1, shearY ?? (skewY ? Math.tan(degreesToRadians(skewY)) : 0), 0, 1, 0, 0]
+  );
 
 /**
  * Returns a transform matrix starting from an object of the same kind of
